@@ -1,0 +1,11 @@
+{
+	"def" :
+	"uitool:mutable.mouseai.experiments.RecurrentjavaSingleChannelMouseai\ndataSource = \"1dViewOfChuasCircuit\";\narrs = \"IHmix HHmix Bmix IHnew HHnew Bnew IHreset HHreset Breset\".split(\"\\\\s\");\nlearnRate = .001;",
+	"prilist" :
+	[
+		"lstmExperiments",
+		"r"
+	],
+	"uiTime" :
+	1.562346252704712e9
+}

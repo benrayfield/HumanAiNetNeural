@@ -1,0 +1,11 @@
+{
+	"def" :
+	"java:new mutable.uitool.unidimgame.PlayAUnidimgame(new mutable.unidimgame.simpleHardcodedGames.InterestReverseDirection())",
+	"prilist" :
+	[
+		"unidimgames",
+		"I"
+	],
+	"uiTime" :
+	1.5546385530351741e9
+}

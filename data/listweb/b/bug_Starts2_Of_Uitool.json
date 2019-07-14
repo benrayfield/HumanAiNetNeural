@@ -1,0 +1,12 @@
+{
+	"def" :
+	"2019-3-31 noticed its starting 4 of them, but I fixed it in ResearchPanel.java.\n\nIn plainjavaLearnloopBeforePortedToUitool which as of 2019-3-22-3p is \"javaThread:mutable.learnloop_partsMovedToMutableuitoollearnloop.old.ui.PaintSlidingVecUi.main()\", opens 2 of the rbmeditor windows. It probably does the same thing for every other uitool, even econball which would (until slight redesign of its events) continue creating events for both of them and maybe prevent garbcol of one even though its not displayed.",
+	"prilist" :
+	[
+		"bugStarts2OfUitool",
+		"plainjavaLearnloopBeforePortedToUitool",
+		"b"
+	],
+	"uiTime" :
+	1.5561265811654403e9
+}

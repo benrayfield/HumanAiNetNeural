@@ -1,0 +1,17 @@
+{
+	"def" :
+	"uitool:mutable.uitool.game.econball.Econball",
+	"prilist" :
+	[
+		"econballSimpleExperiment",
+		"playblob",
+		"makeEconballExperiment(inListwebResearch)FullSizeInsteadOfATinyRectangle",
+		"makeEconballExperiment(inListwebResearch)GrabMouseCursorTheWayItDoesInAWindow",
+		"makeEconballExperimentStopCreating(RealtimeScheduler)EventsAfterHaventMovedMouseInItFor10Seconds",
+		"===bugs===",
+		"gameExperiments",
+		"e"
+	],
+	"uiTime" :
+	1.5561265811642675e9
+}

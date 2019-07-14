@@ -1,0 +1,12 @@
+{
+	"def" :
+	"\n\nGame board will be float[], used as 2d float. Each square is 1 or more floats. For example, in rodentsRevenge (with pacmanDots so neuralqlearning will see score change more often), each square would use floats as 0 or 1 and would have a float for each of pacmanDot, cat, movableBlock, nonmovableBlock (wrapping view with mouse in constant square, so there may be a row and column of these, and theres also a few nonmovable blocks spread around, and maybe a few other object types (but try to keep it very few types cuz it costs RBM visibleNodes of objectTypes*squaresOnGameBoard + controls. I'm undecided if will include the controls (mouse can move any of 8 directions cuz can go through a diagonal hole thats visibly size 0 between 2 corners) so that would be between 3 and 8 inputs, and also might put qlearn score in visibleNodes but the normal way to do that is a feedforward neuralnet with the qlearnscore as outputs (such as unrolling that to controls number of qlearnscores as outputs). neuralqlearning doesnt need to recurse past depth 1 since it learns to predict the qlearn score by predicting the qlearn score for each action (1 recursion ahead) then learns the max of those with adjustment for score observed. Which action goes either in inputs or unrolled (instead of just 1 output) in outputs.",
+	"prilist" :
+	[
+		"gameExperiments",
+		"p",
+		"delfaultDownStack"
+	],
+	"uiTime" :
+	1.560998451861683e9
+}

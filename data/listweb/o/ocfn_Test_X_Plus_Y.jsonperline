@@ -1,0 +1,5 @@
+[1.5509363400131443e9,"ocfnTestXPlusY",{"def" :"ocfn:","prilist" :["occamsfuncerExperiments","o"],"uiTime" :1.5509363309581997e9}]
+[1.5509367000078304e9,"ocfnTestXPlusY",{"def" :"javaclass:immutable.experiments.OccamsfuncerTestEvalToEqual\n===a\n5\n\n===b\n[[? \"plus\"]#+ 2 3]","prilist" :["ocfnTestXPlusY","ocfn","occamsfuncerExperiments","o","delfaultDownStack"],"uiTime" :1.550936671966755e9}]
+[1.55093778469731e9,"ocfnTestXPlusY",{"def" :"javaclass:immutable.experiments.OccamsfuncerTestEvalToEqual\n===a\n5\n\n===b\n[[? \"plus\"]#+ 2 3]","prilist" :["ocfnTestXPlusY","ocfn","occamsfuncerExperiments","o","delfaultDownStack"],"uiTime" :1.5509374474935331e9}]
+[1.5530191121258392e9,"ocfnTestXPlusY",{"def" :"uitool:immutable.experiments.OccamsfuncerTestEvalToEqual\n===a\n5\n\n===b\n[[? \"plus\"]#+ 2 3]","prilist" :["ocfnTestXPlusY","ocfn","occamsfuncerExperiments","o","delfaultDownStack"],"uiTime" :1.5509374474935331e9}]
+[1.5561266326066613e9,"ocfnTestXPlusY",{"def" :"uitool:immutable.experiments.OccamsfuncerTestEvalToEqual\n===a\n5\n\n===b\n[[? \"plus\"]#+ 2 3]","prilist" :["ocfnTestXPlusY","ocfn","occamsfuncerExperiments","o"],"uiTime" :1.5561265811626418e9}]

@@ -1,0 +1,35 @@
+{
+	"def" :
+	"",
+	"prilist" :
+	[
+		"start",
+		"searchResults",
+		"---",
+		"d"
+	],
+	"selectedName" :
+	"---",
+	"uiTime" :
+	1.563121361409678e9,
+	"views" :
+	{
+		"---" :
+		{
+			"prilistScrollYFraction" :
+			0
+		},
+		"searchResults" :
+		{
+			"prilistScrollYFraction" :
+			0,
+			"selectedName" :
+			"---"
+		},
+		"start" :
+		{
+			"prilistScrollYFraction" :
+			0
+		}
+	}
+}

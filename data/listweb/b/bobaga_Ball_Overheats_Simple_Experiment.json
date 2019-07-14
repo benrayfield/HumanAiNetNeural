@@ -1,0 +1,12 @@
+{
+	"def" :
+	"uitool:mutable.experiment.game.Econball\nFIXME",
+	"prilist" :
+	[
+		"gameExperiments",
+		"b",
+		"delfaultDownStack"
+	],
+	"uiTime" :
+	1.5609984570107095e9
+}

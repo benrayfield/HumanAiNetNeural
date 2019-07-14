@@ -1,0 +1,24 @@
+{
+	"def" :
+	"",
+	"prilist" :
+	[
+		"===experiments===",
+		"=",
+		"===testsWorking===",
+		"===testsTodo===",
+		"===bugs===",
+		"===bugsInListwebresearchUi===",
+		"===meta===",
+		"===experimentCategories===",
+		"================",
+		"===========================",
+		"============================",
+		"start",
+		"firstCharNames",
+		"=todoItsSlowlyReadingDatasetsBeforeTheyreNeeded",
+		"=todoKeepOnlyThe(humanAiNetNeural)PartsOfMindmapAfterGetThatWorking"
+	],
+	"uiTime" :
+	1.5630496651813576e9
+}

@@ -1,0 +1,13 @@
+{
+	"def" :
+	"uitool:immutable.experiments.OccamsfuncerTestEvalToEqual\n===a\n5\n\n===b\n[[? \"plus\"]#+ 2 3]",
+	"prilist" :
+	[
+		"ocfnTestXPlusY",
+		"ocfn",
+		"occamsfuncerExperiments",
+		"o"
+	],
+	"uiTime" :
+	1.5561265811626418e9
+}

@@ -1,0 +1,16 @@
+{
+	"def" :
+	"",
+	"prilist" :
+	[
+		"d",
+		"defaultSelectPtr",
+		"datasetsAndEditorsOfThem",
+		"start",
+		"firstCharNames",
+		"defaultUpStack",
+		"delfaultDownStack"
+	],
+	"uiTime" :
+	1.556126581167403e9
+}

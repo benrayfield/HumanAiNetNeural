@@ -1,0 +1,11 @@
+{
+	"def" :
+	"when_A_Buggy_Command_That_Doesnt_End_Was_The_Last_To_Run_Then_Next_Time_You_Run_Listwebresearch_It_Will_Run_That_Command_Again_Cuz_It_Remembers_In_A_Mindmapitem_What_Goes_In_Text_At_Top_Right Its a convenient feature, but I do want detection of it listwebresearch gained control back before running the command again automatically.",
+	"prilist" :
+	[
+		"start",
+		"w"
+	],
+	"uiTime" :
+	1.5561265776141024e9
+}

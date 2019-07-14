@@ -1,0 +1,13 @@
+{
+	"def" :
+	"This might be just when command is javaThread: (which I know only says to console cuz it happens after ResearchPanel says thread started). When java: command starts it appears to always darken the textarea. I do want some place to report errors other than stdout/stderr.",
+	"prilist" :
+	[
+		"bugWhenSeeErrorsInConsoleItKeepsTheUitoolOnScreen",
+		"b",
+		"bugs",
+		"searchResults"
+	],
+	"uiTime" :
+	1.5561265811651545e9
+}

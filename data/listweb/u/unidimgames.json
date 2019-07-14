@@ -1,0 +1,16 @@
+{
+	"def" :
+	"These are where you actually play a unidimgame. Related things such as programming tools for building unidimgames and statistical views of them and occamsfuncer, lstm, neuralqlearning, etc, any kind of internal workings of them, goes in unidimtools (instead of this unidimgames).",
+	"prilist" :
+	[
+		"unidimtools",
+		"===meta===",
+		"InterestReverseDirection",
+		"============================",
+		"start",
+		"u",
+		"delfaultDownStack"
+	],
+	"uiTime" :
+	1.5609984189554858e9
+}
