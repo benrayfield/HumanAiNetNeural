@@ -34,7 +34,11 @@ import mutable.util.Dependencies;
 import mutable.util.task.RunnableTask;
 import mutable.util.task.Task;
 
-/** A Graph implemented using OpenCL. A Graph is a mutable builder of numberCrunching ops with backprop (and in some cases also training) built in.
+/** As of 2020-11-7 this has never worked and is waiting on lazycl to be finished
+cuz planning to use lazycl instead of dealing with opencl directly here.
+TODO testcases that compare it, bit for bit (strictfp float), with CpuGraph.
+<br><br>
+A Graph implemented using OpenCL. A Graph is a mutable builder of numberCrunching ops with backprop (and in some cases also training) built in.
 TODO: OpenCL optimized autodiff, including forward, backprop, and training,
 such as learning in a recurrent GruLayer with 5 FeedForwardLayers above it.
 <br><br>

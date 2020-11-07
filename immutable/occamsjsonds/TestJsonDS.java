@@ -1,11 +1,9 @@
-/** Ben F Rayfield offers this software opensource MIT license */
+/** Ben F Rayfield offers this benrayfield.* software opensource MIT license */
 //test
 package immutable.occamsjsonds;
 import java.util.NavigableMap;
 /** C# Life3d/OccamsJson ported to Java (no true/false/null) by Ben F Rayfield- both opensource MIT license */
 
-//TODO then modified for Zing
-//TODO upload occamsjsonds to github java dir before further modify it for zing.
 public class TestJsonDS{
 
 	public static final String n = JsonDS.n;

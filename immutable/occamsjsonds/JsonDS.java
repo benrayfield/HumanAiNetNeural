@@ -1,4 +1,4 @@
-/** Ben F Rayfield offers this software opensource MIT license.
+/** Ben F Rayfield offers this benrayfield.* software opensource MIT license
 C# Life3d/OccamsJson ported to Java (no true/false/null) by Ben F Rayfield, both opensource MIT license.
 */
 package immutable.occamsjsonds;
@@ -12,10 +12,9 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
-/** //TODO then modified for Zing
-//TODO upload occamsjsonds to github java dir before further modify it for zing.
-DS (of JsonDS) means a subset of json with Doubles and Strings
+/** DS (of JsonDS) means a subset of json with Doubles and Strings
 but excluding booleans and null, and all numbers are float64.
+UPDATE: some of those other things are now supported.
 Maps are sorted first doubles then strings, such as new TreeMap(JsonDS.mapKeyComparator).
 <br><br>
 Functions parse(String) and toJson(Object) create and use any acyclicNet (TODO find duplicates?)
@@ -432,6 +431,15 @@ public class JsonDS{
 		//if(!s.contains(".")) s += ".0";
 		return s;
 	}
+	
+	//TODO optimize
+	public static String floatToString(float d){
+		//scientific notation using "e" instead of "E", for compatibility with javascript
+		String s = Float.toString(d).toLowerCase();
+		if(s.endsWith(".0")) s = s.substring(0, s.length()-2); //TODO use DecimalFormat
+		//if(!s.contains(".")) s += ".0";
+		return s;
+	}
 
 	public static void toJson(StringBuilder sb, Object acyclicNet, int recurse){
 		appendLineThenTabs(sb, recurse);
@@ -476,6 +484,14 @@ public class JsonDS{
 				sb.append('[');
 				for(int i=0; i<a.length; i++){
 					sb.append(doubleToString(a[i]));
+					if(i != a.length-1) sb.append(',');
+				}
+				sb.append(']');
+			}else if(t == float[].class){
+				float a[] = (float[])acyclicNet;
+				sb.append('[');
+				for(int i=0; i<a.length; i++){
+					sb.append(floatToString(a[i]));
 					if(i != a.length-1) sb.append(',');
 				}
 				sb.append(']');
@@ -666,6 +682,21 @@ public class JsonDS{
 	
 	public static String jsonToSingleLine(String json){
 		return json.replaceAll("(\\r|\\n|\\r\\n)\\t*", "");
+	}
+	
+	/** alternate key val key val... */
+	public static NavigableMap map(Object... kvkv){
+		if((kvkv.length&1)!=0) throw new Error("odd num of params");
+		NavigableMap map = new TreeMap();
+		for(int i=0; i<kvkv.length; i+=2){
+			map.put(kvkv[i], kvkv[i+1]);
+		}
+		return Collections.unmodifiableNavigableMap(map);
+	}
+	
+	/** immutable List */
+	public static List list(Object... contents){
+		return Collections.unmodifiableList(Arrays.asList(contents));
 	}
 	
 }

@@ -15,6 +15,9 @@ public class BenrayfieldsPlannedRedesignsOfRecurrentjavaAutodiffToOpenclOptimize
 	and the speed and lag were the same.
 	This only wrote to same index in doublebuffer, in both buffers at once.
 	
+	UPDATE 2020-11-7: planning to use lazycl in OpenclGraph.java (sibling of CpuGraph.java)
+		instead of dealing with opencl directly in OpenclGraph.
+	
 	Despite it not using opencl's full speed
 	cuz of extra IO between every small math op (such as elmul),
 	I'm going to start by opencl optimizing the autodiff,
