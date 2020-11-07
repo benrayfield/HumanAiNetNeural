@@ -726,7 +726,7 @@ public class PaintSlidingVecUi extends Slidinglearnrandvecui{
 		}
 		
 		RBM rbm = new RBM()
-			.setComment("mouseai1dAtTime"+Time.stardateStr())
+			.setComment("mouseai1dAtTime"+Time.now())
 			.setNmhp(nmhp)
 			.setBiasPerNodeside(biasPerNodeside)
 			.setAttLev2PerNodeside(attLev2PerNodeside)

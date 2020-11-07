@@ -1,5 +1,6 @@
 package mutable.recurrentjava.loss;
 
+import immutable.compilers.opencl_fixmeMoveSomePartsToImmutablePackage.FSyMem;
 import mutable.recurrentjava.matrix.Matrix;
 
 public class LossMultiDimensionalBinary implements Loss {
@@ -10,21 +11,24 @@ public class LossMultiDimensionalBinary implements Loss {
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public void backward(Matrix actualOutput, Matrix targetOutput) throws Exception {
-		throw new Exception("not implemented");
+	public void backward(Matrix actualOutput, Matrix targetOutput) {
+		throw new UnsupportedOperationException();
 	}
 	
 	@Override
-	public double measure(Matrix actualOutput, Matrix targetOutput) throws Exception {
-		if (actualOutput.w.length != targetOutput.w.length) {
-			throw new Exception("mismatch");
+	public float measure(Matrix actualOutput, Matrix targetOutput) {
+		if (actualOutput.size != targetOutput.size) {
+			throw new Error("mismatch");
 		}
 		
-		for (int i = 0; i < targetOutput.w.length; i++) {
-			if (targetOutput.w[i] >= 0.5 && actualOutput.w[i] < 0.5) {
+		FSyMem actualOutputW = actualOutput.mem("w");
+		FSyMem targetOutputW = targetOutput.mem("w");
+		
+		for (int i = 0; i < targetOutput.size; i++) {
+			if (targetOutputW.get(i) >= 0.5 && actualOutputW.get(i) < 0.5) {
 				return 1;
 			}
-			if (targetOutput.w[i] < 0.5 && actualOutput.w[i] >= 0.5) {
+			if (targetOutputW.get(i) < 0.5 && actualOutputW.get(i) >= 0.5) {
 				return 1;
 			}
 		}

@@ -10,8 +10,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import immutable.compilers.opencl_fixmeMoveSomePartsToImmutablePackage.FSyMem;
 import immutable.recurrentjava.flop.unary.LinearUnit;
 import immutable.recurrentjava.flop.unary.Unaflop;
+import mutable.recurrentjava.autodiff.CpuGraph;
 import mutable.recurrentjava.autodiff.Graph;
 import mutable.recurrentjava.datastructs.DataSequence;
 import mutable.recurrentjava.datastructs.DataSet;
@@ -31,22 +33,25 @@ public class TextGenerationUnbroken extends DataSet {
 	private static Map<Integer, String> indexToChar = new HashMap<>();
 	private static int dimension;
 	
-	public static String generateText(Model model, int steps, boolean argmax, double temperature, Random rng) throws Exception {
+	public static String generateText(Model model, int steps, boolean argmax, float temperature, Random rng) throws Exception {
 		Matrix start = new Matrix(dimension);
 		model.resetState();
-		Graph g = new Graph(false);
-		Matrix input = start.clone();
+		//Graph g = new Graph(false);
+		Graph g = new CpuGraph(false);
+		Matrix input = (Matrix)start.clone();
+		FSyMem inputW = input.mem("w");
 		String result = "";
 		for (int s = 0; s < steps; s++) {
 			Matrix logprobs = model.forward(input, g);
 			Matrix probs = LossSoftmax.getSoftmaxProbs(logprobs, temperature);
+			FSyMem probsW = probs.mem("w");
 			
 			int indxChosen = -1;
 			if (argmax) {
-				double high = Double.NEGATIVE_INFINITY;
-				for (int i = 0; i < probs.w.length; i++) {
-					if (probs.w[i] > high) {
-						high = probs.w[i];
+				float high = Float.NEGATIVE_INFINITY;
+				for (int i = 0; i < probs.size; i++) {
+					if (probsW.get(i) > high) {
+						high = probsW.get(i);
 						indxChosen = i;
 					}
 				}
@@ -56,10 +61,10 @@ public class TextGenerationUnbroken extends DataSet {
 			}
 			String ch = indexToChar.get(indxChosen);
 			result += ch;
-			for (int i = 0; i < input.w.length; i++) {
-				input.w[i] = 0;
+			for (int i = 0; i < input.size; i++) {
+				inputW.put(i, 0);
 			}
-			input.w[indxChosen] = 1.0;
+			inputW.put(indxChosen, 1f);
 		}
 		result = result.replace("\n", "\"\n\t\"");
 		return result;
@@ -107,14 +112,14 @@ public class TextGenerationUnbroken extends DataSet {
 		List<DataSequence> sequences = new ArrayList<>();
 		
 		for (int s = 0; s < totalSequences; s++) {
-			List<double[]> vecs = new ArrayList<>();
+			List<float[]> vecs = new ArrayList<>();
 			int len = rng.nextInt(sequenceMaxLength - sequenceMinLength + 1) + sequenceMinLength;
 			int start = rng.nextInt(text.length() - len);
 			for (int i = 0; i < len; i++) {
 				String ch = text.charAt(i+start) + "";
 				int index = charToIndex.get(ch);
-				double[] vec = new double[dimension];
-				vec[index] = 1.0;
+				float[] vec = new float[dimension];
+				vec[index] = 1f;
 				vecs.add(vec);
 			}
 			DataSequence sequence = new DataSequence();
@@ -129,12 +134,12 @@ public class TextGenerationUnbroken extends DataSet {
 		training = sequences;
 		lossTraining = new LossSoftmax();
 		lossReporting = new LossSoftmax();
-		inputDimension = sequences.get(0).steps.get(0).input.w.length;
+		inputDimension = sequences.get(0).steps.get(0).input.size;
 		int loc = 0;
 		while (sequences.get(0).steps.get(loc).targetOutput == null) {
 			loc++;
 		}
-		outputDimension = sequences.get(0).steps.get(loc).targetOutput.w.length;
+		outputDimension = sequences.get(0).steps.get(loc).targetOutput.size;
 	}
 
 	@Override
@@ -146,14 +151,14 @@ public class TextGenerationUnbroken extends DataSet {
 			double perplexity = LossSoftmax.calculateMedianPerplexity(model, training);
 			System.out.println("\nMedian Perplexity = " + String.format("%.4f", perplexity));
 		}
-		double[] temperatures = {1, 0.75, 0.5, 0.25, 0.1};
-		for (double temperature : temperatures) {
+		float[] temperatures = {1f, 0.75f, 0.5f, 0.25f, 0.1f};
+		for (float temperature : temperatures) {
 			System.out.println("\nTemperature "+temperature+" prediction:");
 			String guess = TextGenerationUnbroken.generateText(model, reportSequenceLength, false, temperature, rng);
 			System.out.println("\t\"..." + guess + "...\"");
 		}
 		System.out.println("\nArgmax prediction:");
-		String guess = TextGenerationUnbroken.generateText(model, reportSequenceLength, true, 1.0, rng);
+		String guess = TextGenerationUnbroken.generateText(model, reportSequenceLength, true, 1f, rng);
 		System.out.println("\t\"..." + guess + "...\"");
 		System.out.println("========================================");
 	}

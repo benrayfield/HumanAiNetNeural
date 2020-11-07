@@ -91,8 +91,11 @@ public class ListwebPanel extends JSplitPane{
 					lg("LOAD>>>...");
 					String selectedName = (String) ListwebRoot.get(StartSingleUserWindow.select).get("selectedName");
 					String data = ListwebRoot.def(selectedName);
-					ListwebRoot.setDef(StartSingleUserWindow.researchPanelTextContainerStart, data);
-					ListwebRoot.setDef(StartSingleUserWindow.researchPanelTextContainerContinue, data);
+					//SwingUtilities.invokeLater(()->{
+						ListwebRoot.setDef(StartSingleUserWindow.researchPanelTextContainerStart, ""); //so if data is the same text, theres still an event
+						ListwebRoot.setDef(StartSingleUserWindow.researchPanelTextContainerStart, data);
+						ListwebRoot.setDef(StartSingleUserWindow.researchPanelTextContainerContinue, data);
+					//});
 				}
 			}
 		});

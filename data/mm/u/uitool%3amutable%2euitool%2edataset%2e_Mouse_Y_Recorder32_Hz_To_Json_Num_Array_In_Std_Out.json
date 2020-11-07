@@ -1,0 +1,11 @@
+{
+	"def" :
+	"uitool:mutable.uitool.dataset.MouseYRecorder32HzToJsonNumArrayInStdOut",
+	"prilist" :
+	[
+		"mouseRecord",
+		"u"
+	],
+	"uiTime" :
+	1.5754001217998319e9
+}

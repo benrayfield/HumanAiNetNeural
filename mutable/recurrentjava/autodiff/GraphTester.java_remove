@@ -1,0 +1,104 @@
+package mutable.recurrentjava.autodiff;
+
+import java.util.List;
+import java.util.function.Consumer;
+
+import immutable.acyclicflow.AcyclicFlowF;
+import immutable.recurrentjava.flop.unary.Unaflop;
+import immutable.rnn.RnnParams;
+import mutable.recurrentjava.datastructs.DataSequence;
+import mutable.recurrentjava.loss.Loss;
+import mutable.recurrentjava.matrix.Matrix;
+import mutable.recurrentjava.model.Model;
+
+/** Does the same exact things to multiple Graphs to verify they have
+exact same behaviors precise to the bit (strictfp in java, in opencl, etc).
+*/
+public class GraphTester implements Graph{
+	
+	public final Graph[] graphs;
+	
+	public GraphTester(Graph... graphs){
+		this.graphs = graphs;
+		for(Graph g : graphs) if(g.applyBackprop() != graphs[0].applyBackprop()) throw new RuntimeException("Graphs differ on applyBackprop");
+	}
+
+	public boolean isLazy(){
+		for(Graph g : graphs) if(g.isLazy()) return true;
+		return false;
+	}
+
+	public boolean hasWork(){
+		for(Graph g : graphs) if(g.hasWork()) return true;
+		return false;
+	}
+
+	public void doWork(){
+		for(Graph g : graphs){
+			g.doWork(); //returns instantly if !g.hasWork()
+		}
+	}
+
+	public boolean applyBackprop(){
+		return graphs[0].applyBackprop(); //constructor verified they're all equal
+	}
+
+	public Matrix concatVectors(Matrix m1, Matrix m2){
+		FIXME or nevermind this GraphTester class... cant return just 1 Matrix here.
+		throw new RuntimeException("TODO");
+	}
+
+	public Matrix nonlin(Unaflop neuron, Matrix m){
+		throw new RuntimeException("TODO");
+	}
+
+	public Matrix mul(Matrix m1, Matrix m2){
+		throw new RuntimeException("TODO");
+	}
+
+	public Matrix add(Matrix m1, Matrix m2){
+		throw new RuntimeException("TODO");
+	}
+
+	public Matrix add_rowsCols_to_rowsColsWithColmult(Matrix add, Matrix rowsOneCol, int colMult){
+		throw new RuntimeException("TODO");
+	}
+
+	public Matrix elmult_rowsCols_to_rowsColsWithColmult(Matrix rowsCols, Matrix rowsOneCol, int colMult){
+		throw new RuntimeException("TODO");
+	}
+
+	public Matrix oneMinus(Matrix m){
+		throw new RuntimeException("TODO");
+	}
+
+	public Matrix sub(Matrix m1, Matrix m2){
+		throw new RuntimeException("TODO");
+	}
+
+	public Matrix smul(Matrix m, float s){
+		throw new RuntimeException("TODO");
+	}
+
+	public Matrix neg(Matrix m){
+		throw new RuntimeException("TODO");
+	}
+
+	public Matrix elmul(Matrix m1, Matrix m2){
+		throw new RuntimeException("TODO");
+	}
+
+	public Matrix[] acyclicFlow(AcyclicFlowF af, Matrix... ins){
+		throw new RuntimeException("TODO");
+	}
+
+	public void pass(RnnParams params, Consumer<Matrix> outputListener, Consumer<Model> stateResetter, Model model,
+			List<DataSequence> sequences, boolean applyTraining, Loss lossTraining, Loss lossReporting){
+		throw new RuntimeException("TODO");
+	}
+
+	public void updateModelParams(RnnParams p, Model model){
+		throw new RuntimeException("TODO");
+	}
+
+}

@@ -107,7 +107,7 @@ public class RbmUitool extends JPanel{
 		float[][][] zigzagLearnArray = new float[zigzagLearn][][];
 		for(int z=0; z<zigzagLearnArray.length; z++) zigzagLearnArray[z] = RBM.newZerosArraysSameSizeAsNodes(rbmEdges);
 		RBM rbm = new RBM()
-			.setComment("RBM"+Time.stardateStr())
+			.setComment("RBM"+Time.now())
 			.setNmhp(nmhp)
 			.setBiasPerNodeside(biasPerNodeside)
 			.setAttLev2PerNodeside(attLev2PerNodeside)

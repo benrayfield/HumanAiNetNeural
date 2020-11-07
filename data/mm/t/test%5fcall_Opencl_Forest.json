@@ -1,0 +1,12 @@
+{
+	"def" :
+	"java:mutable.compilers.opencl.OpenclUtil.test_callOpenclForest()",
+	"prilist" :
+	[
+		"computeExperiments",
+		"delfaultDownStack",
+		"t"
+	],
+	"uiTime" :
+	1.5664831462818193e9
+}

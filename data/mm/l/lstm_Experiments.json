@@ -1,0 +1,32 @@
+{
+	"def" :
+	"",
+	"prilist" :
+	[
+		"lstmExperiments",
+		"RecurrentjavaSingleChannelMouseai_snapshotWithGruAndLastNNodesAreOutput_SNAPSHOT_2019_7_29_10a",
+		"---removed---",
+		"---done---",
+		"parallelRecurrentjavaOnRecordedMouse_4",
+		"parallelRecurrentjavaOnRecordedMouse_2",
+		"parallelRecurrentjavaOnRecordedMouse_3",
+		"parallelRecurrentjavaOnRecordedMouse",
+		"whyIsGruContextAlways0WhenLearningChuasCircuit",
+		"parallelGruIsProbablyOverfittingCuzBackpropsAreMergedButIOnlyPlannedToMergeOnPlaceAcrossTheMatmulCuzWeightsDontChangeDuringBackpropAndThatsAHugeOptimization",
+		"parallel_recurrentjavaSingleChannelSwapstateLstmLearns5DataseqsOfChuasCircuit_4",
+		"parallel_recurrentjavaSingleChannelSwapstateLstmLearns5DataseqsOfChuasCircuit_3",
+		"parallel_recurrentjavaSingleChannelSwapstateLstmLearns5DataseqsOfChuasCircuit_2",
+		"---todo---",
+		"recurrentjavaSingleChannelSwapstateLstmOn1dViewOfChuasCircuit",
+		"recurrentjavaPaulGraham",
+		"recurrentjavaLaggyBarelyLearningRecurrentjavaSwapstateMouseai",
+		"---inProgress---",
+		"---working---",
+		"recurrentjavaSingleChannelSwapstateLstmLearns5DataseqsOfChuasCircuit",
+		"start",
+		"l",
+		"delfaultDownStack"
+	],
+	"uiTime" :
+	1.6030386434973829e9
+}

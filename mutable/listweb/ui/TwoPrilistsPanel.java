@@ -127,7 +127,7 @@ public class TwoPrilistsPanel extends JPanel{
 		}
 		
 		boolean searchInDefs = Options
-				.option("Search in defs (the text lowest in the window for each name), may be slow", false);
+				.option(ListwebUtil.optionSearchInDefs, false);
 		final String out = command(textSearch.getText(), context, searchInDefs);
 		final int c = textSearch.getCaretPosition();
 		SwingUtilities.invokeLater(()-> {
@@ -145,7 +145,7 @@ public class TwoPrilistsPanel extends JPanel{
 	 * nothing if options dont allow that.
 	 */
 	public static void runNameAsCommand(String name){
-		if (Options.option("Allow mindmap to run code typed into defs, useful for programmers (SECURITY WARNING)",
+		if (Options.option(ListwebUtil.optionAllowRunCodeInDefs,
 				false)) {
 			String command;
 			if (Text.isURL(name))
@@ -187,6 +187,40 @@ public class TwoPrilistsPanel extends JPanel{
 	//its only data created by Humans that adds to memory, including a copy of prilist and def
 	//at potentially every change. Wanted WeakHashMap but need == instead of equals. TODO get both.
 	private static final Map<NavigableMap,String> searchCache = new IdentityHashMap();
+	
+	static boolean findAll_matches(String[] tokensLowercase, String name){
+		//Much slower the first time than the other kinds of search cuz
+		//loads all the names, last version only. Could store them in bigger less files or a database,
+		//but that would be a big redesign, and I might wait for bigger redesign using ufnode/ufmaplist.
+		//First GET per name is from separate file on harddrive.
+		NavigableMap value;
+		try{
+			if(!ListwebUtil.isValidName(name)) return false; //avoid throw
+			value = ListwebRoot.get(name);
+		}catch(Exception e){ //2017-9-15 Its been failing on "EscapedName too long" so I put this try/catch
+			e.printStackTrace(System.err);
+			return false;
+		}
+		String nameConcatDefAllLowercase = searchCache.get(value);
+		if(nameConcatDefAllLowercase == null){
+			nameConcatDefAllLowercase = (name+" "+value.get("def")).toLowerCase();
+			searchCache.put(value, nameConcatDefAllLowercase);
+		}
+		/*if(nameConcatDefAllLowercase == null){
+			List<String> prilist = (List<String>) value.get("prilist");
+			String def = (String) value.get("def");
+			StringBuilder sb = new StringBuilder(name.toLowerCase());
+			if(prilist != null) for(String inPrilist : prilist){
+				sb.append(' ').append(inPrilist.toLowerCase());
+			}
+			if(def != null) sb.append(def.toLowerCase());
+			searchCache.put(value, nameConcatDefAllLowercase=sb.toString());
+		}*/
+		for(String token : tokensLowercase){
+			if(!nameConcatDefAllLowercase.contains(token)) return false;
+		}
+		return true;
+	}
 
 	/** returns the text to replace the command as you type it.
 	FIXME TODO this should be done in a "command" property of some mindmapItem,
@@ -223,38 +257,11 @@ public class TwoPrilistsPanel extends JPanel{
 					return true;
 				};
 			}else if(isFindAll){
-				//Much slower the first time than the other kinds of search cuz
-				//loads all the names, last version only. Could store them in bigger less files or a database,
-				//but that would be a big redesign, and I might wait for bigger redesign using ufnode/ufmaplist.
-				//First GET per name is from separate file on harddrive.
 				hardQuery = (String name)->{
-					NavigableMap value;
-					try{
-						if(!ListwebUtil.isValidName(name)) return false; //avoid throw
-						value = ListwebRoot.get(name);
-					}catch(Exception e){ //2017-9-15 Its been failing on "EscapedName too long" so I put this try/catch
-						e.printStackTrace(System.err);
-						return false;
-					}
-					String nameConcatDefAllLowercase = searchCache.get(value);
-					if(nameConcatDefAllLowercase == null){
-						nameConcatDefAllLowercase = name+" "+value.get("def");
-						searchCache.put(value, nameConcatDefAllLowercase);
-					}
-					/*if(nameConcatDefAllLowercase == null){
-						List<String> prilist = (List<String>) value.get("prilist");
-						String def = (String) value.get("def");
-						StringBuilder sb = new StringBuilder(name.toLowerCase());
-						if(prilist != null) for(String inPrilist : prilist){
-							sb.append(' ').append(inPrilist.toLowerCase());
-						}
-						if(def != null) sb.append(def.toLowerCase());
-						searchCache.put(value, nameConcatDefAllLowercase=sb.toString());
-					}*/
-					for(String token : tokensLowercase){
-						if(!nameConcatDefAllLowercase.contains(token)) return false;
-					}
-					return true;
+					//moved it to a function cuz Eclipse debugger is
+					//saying conditional breakpoint doesnt compile (2019-11-25)
+					//even though it does.
+					return findAll_matches(tokensLowercase,name);
 				};
 			}else if(isRegex){
 				try{

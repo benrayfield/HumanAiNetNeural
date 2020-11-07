@@ -33,14 +33,17 @@ public class RjOptions{
 	I will upgrade it to do doubles instead of just floats, for use in recurrentjava,
 	but Ive read that opencl is not reliable of support for doubles but is reliable of support for floats,
 	and similar for its reliability of support for determinism (to the extent that it can be merkle hashed).
-	*/
+	*
 	public static boolean opencl = false;
+	//public static boolean opencl = true;
+	*/
 	
 	/** an experiment to figure out whats wrong with the parallel code,
 	by running the sequential code multiple times before updating the weights
 	and see if it still learns well. If it doesnt learn well, maybe thats whats wrong
 	with the parallel code, else the parallel code is broken some other way, as of 2019-5-10.
-	*/
+	*
 	public static boolean testDelayedUpdateOfWeights = false;
+	*/
 
 }

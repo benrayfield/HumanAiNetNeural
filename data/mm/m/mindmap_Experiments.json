@@ -1,0 +1,15 @@
+{
+	"def" :
+	"java:\"abc\"+\"def\"",
+	"prilist" :
+	[
+		"mindmapExperiments",
+		"throwInNewThreadSoYouCanCheckStderrToMakeSureItsStackTraceIsThere",
+		"temp",
+		"start",
+		"m",
+		"delfaultDownStack"
+	],
+	"uiTime" :
+	1.5643194444797344e9
+}

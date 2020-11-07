@@ -1,6 +1,7 @@
 package mutable.recurrentjava;
 import java.util.Random;
 
+import immutable.rnn.RnnParams;
 import mutable.recurrentjava.model.Model;
 import mutable.recurrentjava.trainer.Trainer;
 import mutable.recurrentjava.util.NeuralNetworkHelper;
@@ -60,14 +61,14 @@ public class ExampleQuestionAnswering {
 		int hiddenDimension = 10;
 		
 		int hiddenLayers = 1;
-		double learningRate = 0.005;
-		double initParamsStdDev = 0.08;
+		float learningRate = 0.005f;
+		float initParamsStdDev = 0.08f;
 		int epochsPerTask = 50;
 		int experiments = 1;
 		
 		boolean onlyShowSupportingFacts = false;
 		
-		double[] losses = new double[bAbI.TASK_NAMES.length];
+		float[] losses = new float[bAbI.TASK_NAMES.length];
 		
 		for (int experiment = 0; experiment < experiments; experiment++) {
 			for (int task = 0; task < bAbI.TASK_NAMES.length; task++) {
@@ -98,7 +99,8 @@ public class ExampleQuestionAnswering {
 				//*/
 				
 				int reportEveryNthEpoch = 10;
-				double loss = Trainer.train(epochsPerTask, learningRate, nn, data, reportEveryNthEpoch, rng);
+				RnnParams p = new RnnParams().learnRate(learningRate);
+				float loss = Trainer.train(p, epochsPerTask, nn, data, reportEveryNthEpoch, rng);
 				losses[task] += loss;
 				System.out.println("\nFINAL: " + String.format("%.1f", (100*(1-loss))) + "% accuracy");
 			}

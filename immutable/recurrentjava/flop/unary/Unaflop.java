@@ -9,15 +9,6 @@ into an opencl kernel which will be compiled from these objects.
 */
 public interface Unaflop extends Serializable{
 	//benrayfield made these public
-	public double forward(double x);
-	public double deriv(double x);
-	
-	//benrayfield added float versions instead of double, for opencl optimization
-	public default float forward(float x){
-		return (float)forward((double)x);
-	}
-	
-	public default float deriv(float x){
-		return (float)deriv((double)x);
-	}
+	public float forward(float x);
+	public float deriv(float x);
 }

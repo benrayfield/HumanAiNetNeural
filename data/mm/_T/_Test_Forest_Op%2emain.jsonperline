@@ -1,0 +1,5 @@
+[1.575996480004433e9,"TestForestOp.main",{"def" :"java:immutable.forestop/impl.TestForestOp.main(new String[0])","prilist" :["forestopExperiments","T"],"uiTime" :1.5759964591351638e9}]
+[1.575997230968387e9,"TestForestOp.main",{"def" :"java:immutable.forestop.impl.TestForestOp.main(new String[0])","prilist" :["forestopExperiments","T"],"uiTime" :1.5759968983670115e9}]
+[1.5760001400028646e9,"TestForestOp.main",{"def" :"java:immutable.forestop.impl.TestForestOp.main(new String[0])","prilist" :["forestopExperiments","T"],"uiTime" :1.576000093120286e9}]
+[1.5760043400016997e9,"TestForestOp.main",{"def" :"java:immutable.forestop.impl.TestForestOp.main(new String[0])","prilist" :["forestopExperiments","T"],"uiTime" :1.5760043392515724e9}]
+[1.5948188400029783e9,"TestForestOp.main",{"def" :"java:immutable.forestop.impl.TestForestOp.main(new String[0])","prilist" :["forestopExperiments","T","defaultUpStack"],"uiTime" :1.5948187879525511e9}]

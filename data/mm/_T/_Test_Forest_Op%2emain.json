@@ -1,0 +1,12 @@
+{
+	"def" :
+	"java:immutable.forestop.impl.TestForestOp.main(new String[0])",
+	"prilist" :
+	[
+		"forestopExperiments",
+		"T",
+		"defaultUpStack"
+	],
+	"uiTime" :
+	1.5948187879525511e9
+}

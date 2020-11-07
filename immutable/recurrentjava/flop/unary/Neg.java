@@ -5,11 +5,11 @@ public class Neg implements Unaflop {
 
 	private static final long serialVersionUID = 1L;
 
-	public double forward(double x){
+	public float forward(float x){
 		return -x;
 	}
 
-	public double deriv(double x){
+	public float deriv(float x){
 		return -1;
 	}
 }

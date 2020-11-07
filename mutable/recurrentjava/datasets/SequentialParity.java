@@ -37,17 +37,17 @@ public class SequentialParity extends DataSet {
 			int tempSequenceLength = r.nextInt(max_sequence_length) + 1;
 			for (int t = 0; t < tempSequenceLength; t++) {
 				DataStep step = new DataStep();
-				double[] input = {0.0};
+				float[] input = {0f};
 				
 				if (r.nextDouble() < 0.5) {
-					input[0] = 1.0;
+					input[0] = 1f;
 					tot++;
 				}
 				step.input = new Matrix(input);
 				
-				double[] targetOutput = null;
+				float[] targetOutput = null;
 				if (t == tempSequenceLength - 1) {
-					targetOutput = new double[1];
+					targetOutput = new float[1];
 					targetOutput[0] = tot%2;
 					step.targetOutput = new Matrix(targetOutput);
 				}

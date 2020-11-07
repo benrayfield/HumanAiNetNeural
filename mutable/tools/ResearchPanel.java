@@ -134,18 +134,30 @@ public class ResearchPanel extends JPanel implements Consumer<String>{
 				}
 				add(c,BorderLayout.CENTER);
 			}else if(editor == textContinue){
-				if(getComponentCount() > 1){
-					Uitool u = (Uitool) getComponent(1);
-					u.accept(t);
+				String theStartText = textStart.textEditor.getText();
+				if(!theStartText.equals("") && !t.equals("") && !t.equals(theStartText)){
+					//Avoiding this when theStartText is "" is cuz thats used to clear the last Uitool
+					//and should not have Continue event. Similar for !t.equals("").
+					//!t.equals(theStartText) is for...
+					//Dont continue right after >>> button copies the text into Start tab and Continue tab,
+					//which for example java:5+6 in Start creates DisplayString of "11"
+					//but without this IF, Continue would then DisplayString.accept("java:5+6").
+					//Continue tab always does Uitool.accept(what user typed)
+					//and is not useful for DisplayString like its useful for telling a neuralnet
+					//experiment to update its params during learning on screen.
+					if(getComponentCount() > 1){
+						Uitool u = (Uitool) getComponent(1);
+						u.accept(t);
+					}
 				}
 			}else{
 				throw new Error("editor="+editor);
 			}
-			editor.setBackground(Color.white);
+			editor.textEditor.setBackground(Color.white);
 			rp.validate();
 			rp.repaint();
 		}catch(Throwable th){
-			editor.setBackground(new Color(.8f, .8f, .8f));
+			editor.textEditor.setBackground(new Color(.8f, .8f, .8f));
 			if(th.getMessage() != null && th.getMessage().startsWith("Parse error at line")){
 				lg(th.getMessage());
 			}else{
@@ -156,10 +168,13 @@ public class ResearchPanel extends JPanel implements Consumer<String>{
 			//FIXME should this be for either editor? The other only sends a message
 			//to the existing Uitool, doesnt replace the Uitool.
 			if(listenToDocument){
+				String newDef = editor.textEditor.getText();
 				if(editor == textStart){
-					ListwebRoot.setDef(textContainerStart, editor.textEditor.getText());
+					lg("ResearchPanel setDef "+textContainerStart+" def["+newDef+"]");
+					ListwebRoot.setDef(textContainerStart, newDef);
 				}else if(editor == textContinue){
-					ListwebRoot.setDef(textContainerContinue, editor.textEditor.getText());
+					lg("ResearchPanel setDef "+textContainerContinue+" def["+newDef+"]");
+					ListwebRoot.setDef(textContainerContinue, newDef);
 				}
 			}
 		//}

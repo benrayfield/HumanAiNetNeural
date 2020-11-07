@@ -1,0 +1,17 @@
+{
+	"def" :
+	"uitool:mutable.uitool.playblob.PlayblobUi",
+	"prilist" :
+	[
+		"playblob",
+		"makeEconballExperimentStopCreating(RealtimeScheduler)EventsAfterHaventMovedMouseInItFor10Seconds",
+		"makeEconballExperiment(inListwebResearch)GrabMouseCursorTheWayItDoesInAWindow",
+		"makeEconballExperiment(inListwebResearch)FullSizeInsteadOfATinyRectangle",
+		"econballSimpleExperiment",
+		"p",
+		"start",
+		"delfaultDownStack"
+	],
+	"uiTime" :
+	1.5643195718083446e9
+}

@@ -84,18 +84,18 @@ public class EmbeddedReberGrammar extends DataSet {
 				else if (states[state_id].transitions.length == 2) {
 					transition = r.nextInt(2);
 				}
-				double[] observation = null;
+				float[] observation = null;
 				
-				observation = new double[7];
-				observation[states[state_id].transitions[transition].token] = 1.0;
+				observation = new float[7];
+				observation[states[state_id].transitions[transition].token] = 1f;
 				
 				state_id = states[state_id].transitions[transition].next_state_id;
 				if (state_id == 0) { //exit at end of sequence
 					break;
 				}
-				double[] target_output = new double[7];
+				float[] target_output = new float[7];
 				for (int i = 0; i < states[state_id].transitions.length; i++) {
-					target_output[states[state_id].transitions[i].token] = 1.0;
+					target_output[states[state_id].transitions[i].token] = 1f;
 				}
 				steps.add(new DataStep(observation, target_output));
 			}

@@ -12,6 +12,8 @@ import mutable.listweb.ListwebRoot;
 
 public class StackRender implements ListCellRenderer{
 	
+	//TODO merge duplicate code between PrilistRender and StackRender
+	
 	public final Color background, textActive, textSelected, textGhost;
 	
 	public final boolean reverse;

@@ -36,5 +36,9 @@ public class ColorUtil{
 	public static float blue(int color){
 		return (color&0xff)/255f;
 	}
+	
+	public static int monochrome(float bright){
+		return 0xff000000 | (0x10101 * Math.max(0, Math.min((int)(bright*0x100), 0xff)));
+	}
 
 }

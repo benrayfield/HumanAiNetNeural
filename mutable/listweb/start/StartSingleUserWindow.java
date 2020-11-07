@@ -31,8 +31,9 @@ import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.WindowConstants;
 
+import mutable.util.Files;
+import mutable.util.ui.ScreenUtil;
 import mutable.listweb.*;
-import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.ScreenUtil;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.Text;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.Time;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.err.Err;
@@ -57,7 +58,7 @@ public class StartSingleUserWindow{
 	public static void main(String[] args){
 		lg(StartSingleUserWindow.class.getName());
 		ListwebRoot.boot();
-		final JFrame window = new JFrame(ListwebUtil.progName);
+		final JFrame window = new JFrame(Files.dirWhereThisProgramStarted.getName()+" - "+ListwebUtil.progName+" "+Files.dirWhereThisProgramStarted);
 		Arrays.asList(up, down, select, researchPanelTextContainerStart, researchPanelTextContainerContinue, nameOfSearchResults)
 			.stream().forEach(ListwebRoot::vervarDisable);
 		

@@ -1,0 +1,13 @@
+{
+	"def" :
+	"uitool:mutable.mouseai.experiments.RecurrentjavaSingleChannelMouseai_todoParallel\ndataSource = \"mm:mouseY2019-12-3-210p\";\nlearnRate = .001;\nrjTrainerDecayRate = .99;\nrjTrainerSmoothEpsilon = 1e-8;\nrjTrainerGradientClipValue = .5;\nrjTrainerRegularization = .0001;",
+	"prilist" :
+	[
+		"parallelRecurrentjavaOnRecordedMouse",
+		"lstmExperiments",
+		"delfaultDownStack",
+		"p"
+	],
+	"uiTime" :
+	1.5754027971947827e9
+}

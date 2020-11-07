@@ -3,6 +3,7 @@ package immutable.rbm.learnloop;
 import static mutable.util.Lg.*;
 import mutable.compilers.opencl.OpenclUtil;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.Rand;
+import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.Time;
 
 /** You can of course use the more general OpenclUtil.callOpencl(String,Object...),
 but these are just for convenience of calling some things as normal java funcs.
@@ -110,6 +111,19 @@ public class OpenclProgs{
 	
 	/** bc.length==bSize*cSize && cd.length==cSize*dSize */
 	public static synchronized float[] matmulThenSigmoidThenWeightedCoinFlip(float[] bias, int bSize, int cSize, int dSize, float[] bc, float[] cd){
+		/*
+		//FIXME remove this test
+		Object[] outTest = OpenclUtil.callOpencl("kernel void "+OpenclUtil.newKernelName()+"(global float* bdOut){\r\n"+
+				"	int bd = get_global_id(0);\r\n"+
+				"	float x = bd;\r\n"+
+				"	x = x*x;\r\n"+
+				"	bdOut[bd] = x;\r\n"+
+				"}", new int[]{100},
+				new float[100]);
+		float[] outF = (float[])outTest[0];
+		System.out.println("FIXME remove this test. outF[57]="+outF[57]);
+		*/
+		
 		Object[] out = OpenclUtil.callOpencl(matmulCode1dAs2dThenSigmoidThenWeightedCoinFlip, new int[]{bSize*dSize},
 			bias, bSize, cSize, dSize, bc, cd, new float[bSize*dSize]);
 		return (float[]) out[out.length-1];
@@ -177,16 +191,20 @@ public class OpenclProgs{
 	public static final String matmulCode1dAs2dThenSigmoidThenWeightedCoinFlip =
 		"kernel void "+OpenclUtil.newKernelName()+"(global const float* bias, int const bSize, int const cSize, int const dSize, global const float* bc, global const float* cd, global float* bdOut){\r\n"+
 		"	int bd = get_global_id(0);\r\n"+
-		"	const int b = bd/dSize;\r\n"+ //TODO optimize allow get_global_id(more dims)?//
-		"	const int d = bd%dSize;\r\n"+ //TODO optimize allow get_global_id(more dims)?
+		"	int b = bd/dSize;\r\n"+ //TODO optimize allow get_global_id(more dims)?//
+		"	int d = bd%dSize;\r\n"+ //TODO optimize allow get_global_id(more dims)?
 		"	float sum = bias[bd];\r\n"+
 		"	for(int c=0; c<cSize; c++){\r\n"+
 		"		sum += bc[b*cSize+c]*cd[c*dSize+d];\r\n"+ //TODO optimize allow get_global_id(more dims)?
 		"	}\r\n"+
-		"	float chance = 1/(1+exp(-sum));\r\n"+
-		"	float randFraction = fmod(fabs(sum)*49999,1);\r\n"+
-		"	float weightedCoinFlip = fmax(0,ceil(chance-randFraction));\r\n"+
+		"	float zero = 0.0f;\r\n"+
+		"	float one = 1.0f;\r\n"+
+		"	float fourNineNineNineNine = 49999.0f;\r\n"+
+		"	float chance = one/(one+exp(-sum));\r\n"+
+		"	float randFraction = fmod(fabs(sum)*fourNineNineNineNine,one);\r\n"+
+		"	float weightedCoinFlip = fmax(zero,ceil(chance-randFraction));\r\n"+
 		"	bdOut[bd] = weightedCoinFlip;\r\n"+
+		//"	bdOut[bd] = one+bias[bd]*3.1f;\r\n"+
 		"}";
 	
 	/*public static final String matmulCode1dAs2d =
@@ -263,12 +281,14 @@ public class OpenclProgs{
 		return bd;
 	}
 	
-	public static void testOpencl(){
+	public static void testOpencl(boolean allowDoubles){
 		//testInt();
 		testOpencl_matmulFloat();
 		testOpencl_matmulFloat();
-		testOpencl_matmulDouble();
-		testOpencl_matmulDouble();
+		if(allowDoubles){
+			testOpencl_matmulDouble();
+			testOpencl_matmulDouble();
+		}
 	}
 	
 	public static void testOpencl_matmulFloat(){
@@ -288,9 +308,11 @@ public class OpenclProgs{
 		float[][] bdFromOpencl = matmul(bc, cd);
 		double sumOfSquares = 0;
 		double sumOfSquaresOfCpu = 0, sumOfSquaresOfOpencl = 0;
+		boolean isExact = true;
 		for(int b=0; b<bSize; b++){
 			for(int d=0; d<dSize; d++){
 				float sub = bdFromCpu[b][d]-bdFromOpencl[b][d];
+				if(sub != 0) isExact = false;
 				sumOfSquares += sub*sub;
 				//Cuz opencl got the right answer but stdDevOfErr=0.0
 				//WARNING: An illegal reflective access operation has occurred
@@ -307,7 +329,9 @@ public class OpenclProgs{
 		double stdDevOfErr = Math.sqrt(sumOfSquares/samples);
 		String result = "stdDevOfErr="+stdDevOfErr+" sumOfSquaresOfCpu="+sumOfSquaresOfCpu+" sumOfSquaresOfOpencl="+sumOfSquaresOfOpencl;
 		if(stdDevOfErr > .000001) throw new Error("matmul differs too much between cpu and opencl, "+result);
-		lg("testOpencl_matmulFloat matmul passed, "+result);
+		lg("testOpencl_matmulFloat matmul passed !strictfp, "+result);
+		if(!isExact) throw new Error("testOpencl_matmulFloat failed strictfp");
+		lg("testOpencl_matmulFloat matmul passed strictfp");
 	}
 	
 	public static void testOpencl_matmulDouble(){
@@ -375,8 +399,55 @@ public class OpenclProgs{
 		}
 	}*/
 	
+	
+	/** matmul is probably bottlenecked by IO moving between globalMem and gpuCores
+	as it seems to be many times slower than the theoretical max flops of the gpu,
+	so I'm testing this which wont have any global memory at all except to write 1 number
+	per millions or more of calculations that dont read from global memory
+	and instead are derived from get_global_id(0).
+	*/
+	public static void testGpuComputeFlopsWithoutMuchGlobalMem(){
+		int threads =  1000000;
+		int loopSize = 1000000;
+		int opsPerLoopBody = 5; //or 4 if z = x * x and its z*z*x instead of x*x*x*x*x
+		double totalOps = (double)threads*loopSize*opsPerLoopBody;
+		String code =
+			"kernel void testGpuComputeFlopsWithoutMuchGlobalMem(int const a, global float* theOut){\n"+
+			"	int id = get_global_id(0);\n"+
+			"	float sum = 0;\n"+
+			"	for(int x=id; x<a+id; x++){\n"+
+			//"		sum += x;\n"+
+			"		sum += x*x*x*x*x;\n"+
+			//"		sum += x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x*x;\n"+
+			"	}\n"+
+			"	theOut[id] = sum;\n"+
+			"}";
+		Object[] outs = OpenclUtil.callOpencl( //compile and run it once before timing it
+			code,
+			new int[]{100},
+			120,
+			new float[100] //ignored
+		);
+		double timeStart = Time.now();
+		outs = OpenclUtil.callOpencl(
+			code,
+			new int[]{threads},
+			loopSize,
+			new float[threads] //ignored
+		);
+		float[] out = (float[]) outs[1];
+		double timeEnd = Time.now();
+		double duration = timeEnd-timeStart;
+		double flops = totalOps/duration;
+		double gflops = flops*1e-9;
+		lg("outs[0] = "+out[0]);
+		lg("outs[5] = "+out[5]);
+		lg("gflops="+gflops+" seconds="+duration+" ops="+totalOps);
+	}
+	
 	public static void main(String... args){
-		testOpencl();
+		testOpencl(false);
+		testGpuComputeFlopsWithoutMuchGlobalMem();
 	}
 	
 

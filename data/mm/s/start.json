@@ -1,0 +1,71 @@
+{
+	"def" :
+	"",
+	"options" :
+	{
+		"(TODO is this option obsolte?) Allow mindmap to run code typed into defs, useful for programmers (SECURITY WARNING)" :
+		0,
+		"(TODO is this option obsolte?) Search in defs (the text lowest in the window for each name), may be slow" :
+		0,
+		"(makes search slow, TODO fix that) use left column of todoTimes and !hdwmy colors" :
+		1,
+		"Allow mindmap to run code typed into defs, useful for programmers (SECURITY WARNING)" :
+		0,
+		"Search in defs (the text lowest in the window for each name), may be slow" :
+		0
+	},
+	"prilist" :
+	[
+		"start",
+		"lstmExperiments",
+		"plainjavaLearnloopExperiments",
+		"occamsfuncerExperiments",
+		"forestopExperiments",
+		"mouseRecord",
+		"computeExperiments",
+		"mindmapExperiments",
+		"=todo get permDeleteIncludingMyHistoryButNotHistoryOfMeBeingInOthers working then clean up the mindmap for humanAiNetNeural since it includes old incomplete experiments in humanAiNet",
+		"=todoKeepOnlyThe(humanAiNetNeural)PartsOfMindmapAfterGetThatWorking",
+		"playblob",
+		"datasetsAndEditorsOfThem",
+		"unidimgames",
+		"unidimtools",
+		"gameExperiments",
+		"automatedMmgExperiments",
+		"musicExperiments",
+		"xpJarsInQ18",
+		"===experimentCategories===",
+		"firstCharNames",
+		"bugs",
+		"todo2019-2-22+",
+		"s",
+		"defaultUpStack",
+		"delfaultDownStack",
+		"-",
+		"=",
+		"I",
+		"M",
+		"T",
+		"a",
+		"b",
+		"c",
+		"d",
+		"e",
+		"g",
+		"j",
+		"l",
+		"m",
+		"n",
+		"o",
+		"p",
+		"r",
+		"t",
+		"u",
+		"w",
+		"x"
+	],
+	"todoTime" :
+	1.5643223594973912e9,
+	"uiTime" :
+	1.6013051255220456e9
+}

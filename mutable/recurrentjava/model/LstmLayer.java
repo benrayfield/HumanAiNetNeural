@@ -63,7 +63,7 @@ public class LstmLayer implements Model {
 	}
 	
 	//benrayfield added parallelSize param
-	public LstmLayer(int parallelSize, int inputDimension, int outputDimension, double initParamsStdDev, Random rng){
+	public LstmLayer(int parallelSize, int inputDimension, int outputDimension, float initParamsStdDev, Random rng){
 		this.parallelSize = parallelSize;
 		this.inputDimension = inputDimension;
 		this.outputDimension = outputDimension;
@@ -83,7 +83,7 @@ public class LstmLayer implements Model {
 	}
 	
 	//benrayfield (maybe todo?) editing this func to make it parallel (does it need edit?)
-	public Matrix forward(Matrix input, Graph g) throws Exception {
+	public Matrix forward(Matrix input, Graph g) {
 		
 		//input gate
 		Matrix sum0 = g.mul(Wix, input);

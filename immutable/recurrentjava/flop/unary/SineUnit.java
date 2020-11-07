@@ -5,12 +5,12 @@ public class SineUnit implements Unaflop {
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public double forward(double x) {
-		return Math.sin(x);
+	public float forward(float x) {
+		return (float)Math.sin(x);
 	}
 
 	@Override
-	public double deriv(double x) {
-		return Math.cos(x);
+	public float deriv(float x) {
+		return (float)Math.cos(x);
 	}
 }

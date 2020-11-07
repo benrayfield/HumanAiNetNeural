@@ -9,6 +9,7 @@ import java.util.function.*;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import immutable.util.MathUtil;
 import mutable.util.Parallel;
 import mutable.util.Rand;
 import mutable.util.Time;
@@ -37,6 +38,18 @@ public class StretchVideo extends JPanel{
 	to meausure how much its learned (which Learn2d class does).
 	*/
 	public final boolean multithread;
+	
+	/** greyscale's values are truncated if outside range 0 to 1 */
+	public StretchVideo(float[][] greyscale){
+		this(
+			false,
+			greyscale.length,
+			greyscale[0].length,
+			(int y, int x)->{
+				return 0xff000000 | (0x10101*MathUtil.holdInRange(0, (int)(greyscale[y][x]*256), 255));
+			}
+		);
+	}
 	
 	/** The Rect is how many squares tall and wide. The Bifunction takes (y,x) and returns colorARGB.
 	If painter is null, then caller must set the pixels in the BufferedImage directly.

@@ -1,0 +1,13 @@
+{
+	"def" :
+	"removed probably.\n\nuitool:mutable.mouseai.experiments.RecurrentjavaSingleChannelMouseai_snapshotWithGruAndLastNNodesAreOutput_SNAPSHOT_2019_7_29_10a\n//You have to run this maybe 10 times on average before it randomly starts at a state that converges to nearly learned cuz usually instead that one LSTM node gets stuck very early, as its the only node that output depends on. But when it learns, it learns very well. The times it learns well, it started with its output chaotic and its range of output near the range of correctOut. LearnRate seems to strongly affect it more than just doing things faster or slower. Its using the learnRate (maybe combined with rmsprop rate) to escape localmins, to jump around.\ndataSource = \"1dViewOfChuasCircuit\";\narrs = \"IHmix HHmix Bmix IHnew HHnew Bnew IHreset HHreset Breset\".split(\"\\\\s\");\nlearnRate = .002;",
+	"prilist" :
+	[
+		"lstmExperiments",
+		"R"
+	],
+	"todoTime" :
+	1.5677837477709324e9,
+	"uiTime" :
+	1.5804837380844357e9
+}

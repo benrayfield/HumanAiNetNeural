@@ -17,6 +17,11 @@ import mutable.util.Lg;
 
 public class Start{
 	public static void main(String[] args){
+		//TestRemoteServerLag.main(args); //FIXME remove this test soon
+		//System.exit(0);
+		
+		
+		
 		Lg.lg("java.library.path="+System.getProperty("java.library.path"));
 		
 		//lg("testtvq="+TimelessExperimentUtil.trainingVecQuantity("mnistOcrTestFile16x16From28x28ShrunkToHalfSizeAndOnehotLabelsAddedAlongASizeExpandingTo16x16"));

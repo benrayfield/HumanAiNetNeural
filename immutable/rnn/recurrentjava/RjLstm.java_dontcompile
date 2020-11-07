@@ -1,0 +1,564 @@
+package immutable.rnn.recurrentjava;
+import static mutable.util.Lg.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.function.DoubleSupplier;
+
+import immutable.recurrentjava.flop.unary.LinearUnit;
+import immutable.recurrentjava.flop.unary.Unaflop;
+import immutable.rnn.RnnParams;
+import immutable.recurrentjava.flop.unary.SigmoidUnit;
+import mutable.recurrentjava.model.Model;
+import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.Rand;
+import mutable.recurrentjava.RjOptions;
+import mutable.recurrentjava.autodiff.Graph;
+import mutable.recurrentjava.datastructs.DataSequence;
+import mutable.recurrentjava.datastructs.DataStep;
+import mutable.recurrentjava.loss.Loss;
+import mutable.recurrentjava.loss.LossSoftmax;
+import mutable.recurrentjava.loss.LossSumOfSquares;
+import mutable.recurrentjava.matrix.Matrix;
+import mutable.recurrentjava.model.FeedForwardLayer;
+import mutable.recurrentjava.model.LstmLayer;
+import mutable.recurrentjava.model.Model;
+import mutable.recurrentjava.model.NeuralNetwork;
+import mutable.recurrentjava.trainer.Trainer;
+import mutable.recurrentjava.util.NeuralNetworkHelper;
+import mutable.recurrentjavastuff.SwapStateLstm;
+
+/** Immutable longShortTermMemory,
+similar to RBM.java learnloop (for timeless/unordered data) but LSTM is for timeful data.
+This is a normal LSTM with inputs a linear layer summed with the other LSTM weights
+and outputs as a feedforward layer (sigmoid of weightedsums),
+so technically this is 3 layers, but the only stateful nodes are in middle layer,
+like in mutable.recurrentjava.util.NeuralNetworkHelper.makeLstm(...).
+The **x vars (Wix Wfx Wox Wcx) are the linear input.
+Since its recurrent, its as powerful a model as many layers.
+<br><br>
+Some code copied from recurrentjava (MIT license)
+but will eventually rebuild in opencl using immutable.abstracttensordb.Tensor
+which will be called from occamsfuncer. Until then, use this Lstm.java
+similar to RBM.java, and the learn and predict funcs will instantiate a Recurrentjava lstm
+with the data here, train and predict using it, then return a new immutable instance of this.
+<br><br>
+TODO simulateChuasCircuitAsLstmTestcase
+TODO findSomeHarderLstmTestcaseThanChuasCircuitAndGetLstmToPassIt
+TODO portPartsOfRecurrentjavaToOpenclAndVerifyUsingTheHarderLstmTestcaseThatRecurrentjavaPassed
+TODO mousegesturerace
+TODO each input is b/(b+c) similar to neuralDropout, nmhp.
+TODO mmgMouseai
+*/
+public class RjLstm{
+	
+	/** FIXME this is ignored some places which were originally nonparallel
+	and maybe havent been upgraded, and ignored other places that are always parallel???
+	*
+	public static final boolean learnParallel = false;
+	*/
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	//TODO create LearnStep, Lstm, NodesState, and PredictStep using the order of dims I want
+	//instead of how recurrentjava does it, and translate between those and Rj* classes of similar name,
+	//after get those working. Then when upgrade to opencl, wont inherit recurrentjava's dim order.
+	//parallelIndex should be a more outer dim than a vec which can be used by itself.
+	
+	/** TODO always (cuz opencl auto calls cpu if would be faster)
+	...
+	true for use of OpenclUtil,
+	false for recurrentjava or I might implement another CPU form after GPU form is working.
+	CPU has lower lag for smaller data. GPU has more compute power and is barely low enough lag
+	for games if you only do a few sequential things.
+	*
+	public final boolean gpuOptimized;
+	*/
+	
+	/** w(eight) i(nput) o(utput) c(ontext) f(orget) (e)x(ternal) h(idden) b(ias) */
+	public final MatD
+		Wix, Wih,
+		Wfx, Wfh,
+		Wox, Woh,
+		Wcx, Wch,
+		outFeedforwardW;
+	
+	/** w(eight) i(nput) o(utput) c(ontext) f(orget) (e)x(ternal) h(idden) b(ias) */
+	public final MatD bi, bf, bo, bc, outFeedforwardB;
+	
+	/** "Neural Measure Help Predict" (nmhp)
+	Input indexs {x,x+1}'s prediction accuracy of indexs {y,y+1}
+	when val(x)+val(x+1) > val(y)+val(y+1) (all are positive).
+	val(n)+val(n+1) is similar to neuralDropout but is a scalar.
+	The value gradually dropouted or not is val(n)/(val(n)+val(n+1)),
+	where the x y n are all even input indexs.
+	Nmhp was meant for the second highest rbm layer which peers would share some
+	of their node states, and RBM is timeless, but since LSTM is timeful
+	we will have to take these stats in context of a time window,
+	what happens after the neuralDropout-like numbers are those ways
+	instead of whats instantly calculated from them like in RBM.
+	<br><br>
+	TODO Defining each input as an even/odd input pair (ScalarStream),
+	whose value is b/(b+c) and which may have an output node if we are trying to predict it,
+	so among those (TODO Im not using this yet since Im just trying to get LSTM working well first)
+	this "Neural Measure Help Predict" (nmhp) is all pairs of scalarStreams
+	and is a decaying average of the prediction accuracy of the few vars we care about
+	here locally (such as mouseYFraction, mouseXFraction, etc, which will be the low n ScalarStreams),
+	and by pagerank-like following the paths of which ScalarStream helps to predict
+	which other ScalarStreams we find which are useful for predicting mouseYFraction etc
+	and soon remove ScalarStreams that are not useful in predicting that
+	and explore the p2p network to find more ScalarStreams as they recommend eachother.
+	Until then I'll use inputs not in pairs cuz recurrentjava is slow
+	and I havent opencl optimized yet (will use OpenclUtil).
+	See mutable.mouseai.mmg.ScalarStream
+	*/
+	public final MatD nmhp;
+	
+	public final int sizeIn, sizeHid, sizeOut;
+	
+	public RjLstm(
+			//TODO always (cuz opencl auto calls cpu if would be faster) boolean gpuOptimized,
+			MatD Wix, MatD Wih,
+			MatD Wfx, MatD Wfh,
+			MatD Wox, MatD Woh,
+			MatD Wcx, MatD Wch,
+			MatD outFeedforwardW,
+			MatD bi, MatD bf, MatD bo, MatD bc, MatD outFeedforwardB,
+			MatD nmhp){
+		//TODO always (cuz opencl auto calls cpu if would be faster) this.gpuOptimized = gpuOptimized;
+		this.Wix = Wix;
+		this.Wih = Wih;
+		this.Wfx = Wfx;
+		this.Wfh = Wfh;
+		this.Wox = Wox;
+		this.Woh = Woh;
+		this.Wcx = Wcx;
+		this.Wch = Wch;
+		this.outFeedforwardW = outFeedforwardW;
+		this.bi = bi;
+		this.bf = bf;
+		this.bo = bo;
+		this.bc = bc;
+		this.outFeedforwardB = outFeedforwardB;
+		this.nmhp = nmhp; //TODO in future versions after I get LSTM working better and opencl optimized
+		this.sizeIn = Wix.cols; //FIXME verify
+		this.sizeHid = Wix.rows; //FIXME verify
+		this.sizeOut = outFeedforwardW.rows; //FIXME verify
+	}
+	
+	public String toString(){
+		return "["+getClass().getSimpleName()
+			+"\nwix"+Wix
+			+"\nwih"+Wih
+			+"\nwfx"+Wfx
+			+"\nwfh"+Wfh
+			+"\nwox"+Wox
+			+"\nwoh"+Woh
+			+"\nwcx"+Wcx
+			+"\nwch"+Wch
+			+"\noutFeedforwardW"+outFeedforwardW
+			+"\nbi"+bi
+			+"\nbf"+bf
+			+"\nbo"+bo
+			+"\nbc"+bc
+			+"\noutFeedforwardB"+outFeedforwardB
+			+"\nnmhp"+nmhp
+			+"\n]";
+	}
+	
+	/*
+	public LstmLayer(int inputDimension, int outputDimension, double initParamsStdDev, Random rng) {
+		this.inputDimension = inputDimension;
+		this.outputDimension = outputDimension;
+		Wix = Matrix.rand(outputDimension, inputDimension, initParamsStdDev, rng);
+		Wih = Matrix.rand(outputDimension, outputDimension, initParamsStdDev, rng);
+		bi = new Matrix(outputDimension);
+		Wfx = Matrix.rand(outputDimension, inputDimension, initParamsStdDev, rng);
+		Wfh = Matrix.rand(outputDimension, outputDimension, initParamsStdDev, rng);
+		//set forget bias to 1.0, as described here: http://jmlr.org/proceedings/papers/v37/jozefowicz15.pdf
+		bf = Matrix.ones(outputDimension, 1);
+		Wox = Matrix.rand(outputDimension, inputDimension, initParamsStdDev, rng);
+		Woh = Matrix.rand(outputDimension, outputDimension, initParamsStdDev, rng);
+		bo = new Matrix(outputDimension);
+		Wcx = Matrix.rand(outputDimension, inputDimension, initParamsStdDev, rng);
+		Wch = Matrix.rand(outputDimension, outputDimension, initParamsStdDev, rng);
+		bc = new Matrix(outputDimension);
+	}
+	feedforward layer (the outputs):
+	W = Matrix.rand(outputDimension, inputDimension, initParamsStdDev, rng);
+	b = new Matrix(outputDimension);
+	*/
+	public RjLstm(int ins, int nodes, int outs, DoubleSupplier rand){
+		this(
+			new MatD(nodes, ins, rand), //double[][] Wix
+			new MatD(nodes, nodes, rand), //double[][] Wih,
+			new MatD(nodes, ins, rand), //double[][] Wfx
+			new MatD(nodes, nodes, rand), //double[][] Wfh,
+			new MatD(nodes, ins, rand), //double[][] Wox,
+			new MatD(nodes, nodes, rand), //double[][] Woh,
+			new MatD(nodes, ins, rand), //double[][] Wcx,
+			new MatD(nodes, nodes, rand), //double[][] Wch,
+			new MatD(outs, nodes, rand), //double[][] outFeedforwardW,
+			MatD.rjNodeVec(new float[nodes]), //double[] bi,
+			MatD.rjNodeVec(new float[nodes]), //double[] bf, //FIXME no need to duplicate these zeros doubles
+			MatD.rjNodeVec(new float[nodes]), //double[] bo,
+			MatD.rjNodeVec(new float[nodes]), //double[] bc,
+			MatD.rjOutVec(new float[outs]), //double[] outFeedforwardB,
+			null //double[][] nmhp
+		);
+	}
+	
+	private RjLstm(LstmLayer rjlstm, FeedForwardLayer rjff, MatD nmhp){
+		this(
+			//TODO always (cuz opencl auto calls cpu if would be faster) false, //boolean gpuOptimized,
+			toMatD(rjlstm.Wix), //double[][] Wix
+			toMatD(rjlstm.Wih), //double[][] Wih,
+			toMatD(rjlstm.Wfx), //double[][] Wfx
+			toMatD(rjlstm.Wfh), //double[][] Wfh,
+			toMatD(rjlstm.Wox), //double[][] Wox,
+			toMatD(rjlstm.Woh), //double[][] Woh,
+			toMatD(rjlstm.Wcx), //double[][] Wcx,
+			toMatD(rjlstm.Wch), //double[][] Wch,
+			toMatD(rjff.W), //double[][] outFeedforwardW,
+			toMatD(rjlstm.bi), //double[] bi,
+			toMatD(rjlstm.bf), //double[] bf,
+			toMatD(rjlstm.bo), //double[] bo,
+			toMatD(rjlstm.bc), //double[] bc,
+			toMatD(rjff.b), //double[] outFeedforwardB,
+			nmhp //double[][] nmhp
+		);
+	}
+	
+	
+	
+	private RjLstm(NeuralNetwork recurrentjavaLstm, MatD nmhp){
+		this((LstmLayer)recurrentjavaLstm.layers.get(0), (FeedForwardLayer)recurrentjavaLstm.layers.get(1), nmhp);
+	}
+	
+	//TODO prediction func
+	//TODO hiddenContext and cellContext as 2d matrix since it will predict multiple in parallel.
+	//Its already a Matrix in recurrentjava. Design prediction and learn API here that way.
+	
+	public RjPredictStep predict(RjPredictStep ins, Unaflop outFunc){
+		if(!ins.isInput) throw new Error("Param is an output. You can for example use prev output .setInVecs(double[][]) for your next input.");
+		NeuralNetwork recurrentjava = recurrentjavaLstm(this, ins.context, outFunc);
+		Matrix out;
+		try{
+			out = recurrentjava.forward(toMatrix(ins.vecs), new Graph());
+		}catch(Exception e){ throw new Error(e); }
+		return new RjPredictStep(false,  recurrentjavaToNodesState(recurrentjava), toMatD(out));
+	}
+	
+	/** sequences[parallelIndexToRunSequentially][timeStepPerSequence].
+	FIXME learn(...) is correctly getting nonparallel data during testDelayedUpdateOfWeights
+	so need to get RjLearnStep[][] and run double loop,
+	but when that experiment is done and opencl upgrade it will be back to RjLearnStep[].
+	*
+	public RjLstm learn_testDelayedUpdateOfWeights(
+			RnnParams p, int repeat, Unaflop outFunc, Loss lossFunc, RjLearnStep[][] sequences){
+		int parallelSize = sequences.length;
+		RjNodesState n = newEmptyNodesStates(1); //instead of parallelSize cuz testDelayedUpdateOfWeights
+		NeuralNetwork rjLstm = recurrentjavaLstm(this, n, outFunc);
+		boolean applyTraining = true;
+		try{
+			for(int r=0; r<repeat; r++){
+				//In testDelayedUpdateOfWeights, parallelSize things are done sequentially.
+				for(int parallelIndex=0; parallelIndex<parallelSize; parallelIndex++){
+					List<DataSequence> dataSeqs = Arrays.asList(toDataSequence(sequences[parallelIndex])); //TODO optimize
+					double reportedLossTrain = Trainer.pass(
+						p, Trainer.ignoreMatrix, Trainer.defaultStateResetter,
+						rjLstm, dataSeqs, applyTraining, lossFunc, lossFunc);
+				}
+				if(RjOptions.testDelayedUpdateOfWeights){
+					Trainer.updateModelParams(p, rjLstm); //testDelayedUpdateOfWeights skips it in pass
+				}
+			}
+		}catch(Exception e){ throw new Error(e); }
+		return new RjLstm((LstmLayer)rjLstm.layers.get(0), (FeedForwardLayer)rjLstm.layers.get(1), null);
+	}*/
+	
+	public RjLstm learn(RnnParams p, int repeat, Unaflop outFunc, Loss lossFunc, RjLearnStep... sequence){
+		//recurrentjava is stateful, so copy first, do recurrentjava, then copy to immutable and return that
+		int parallelVecs = sequence[0].howManyParallelVecs();
+		RjNodesState n = newEmptyNodesStates(parallelVecs);
+		NeuralNetwork rjLstm = recurrentjavaLstm(this, n, outFunc);
+		boolean applyTraining = true;
+		//Loss lossTraining = new LossSumOfSquares(); //waves
+		//Loss lossTraining = new LossSoftmax(); //text
+		//Loss lossReporting = lossTraining;
+		List<DataSequence> dataSeqs = Arrays.asList(toDataSequence(sequence));
+		try{
+			for(int r=0; r<repeat; r++) {
+				float reportedLossTrain = Trainer.pass(
+					p, Trainer.ignoreMatrix,
+					Trainer.defaultStateResetter,
+					rjLstm, dataSeqs, applyTraining, lossFunc, lossFunc);
+				//lg("reportedLossTrain="+reportedLossTrain);
+			}
+		}catch(Exception e){ throw new Error(e); }
+		return new RjLstm((LstmLayer)rjLstm.layers.get(0), (FeedForwardLayer)rjLstm.layers.get(1), null);
+	}
+	
+	static RjNodesState recurrentjavaToNodesState(NeuralNetwork recurrentjava){
+		LstmLayer ll = (LstmLayer) recurrentjava.layers.get(0);
+		return new RjNodesState(toMatD(ll.hiddenContext),toMatD(ll.cellContext));
+	}
+	
+	public static void test(){
+		testCopyBetweenImmutableAndMutableNeuralnets();
+		lg(RjLstm.class+" test pass");
+	}
+	
+	/** 2019-5-7 somethings making the immutable wrapper learn mostly randomly. Testing if its copying right.
+	It might also be cuz NeuralNetworkHelper.makeLstm outputs LinearUnit for text, while I output sigmoid.
+	*/
+	public static void testCopyBetweenImmutableAndMutableNeuralnets(){
+		/*RjLstm bWeights = new RjLstm(30, 100, 40, ()->(Rand.strongRand.nextGaussian()*.06));
+		NodesState 
+		NeuralNetwork c = recurrentjavaLstm(this, n);
+		*/
+		int ins = 30, nodes = 100, outs = 40;
+		int parallelSize = 1; //FIXME bigger
+		NeuralNetwork b = NeuralNetworkHelper.makeLstm(
+			parallelSize,
+			ins,
+			nodes, 1, 
+			outs, SigmoidUnit.instance, 
+			.08f, Rand.strongRand);
+		b.resetState();
+		RjLstm c0 = new RjLstm(b,null);
+		RjNodesState c1 = recurrentjavaToNodesState(b);
+		//((LstmLayer)b.layers.get(0)).Wch.w[50] = 3.33; //correctly says: Exception in thread "main" java.lang.Error: Differs at index 50
+		NeuralNetwork d = recurrentjavaLstm(c0, c1, SigmoidUnit.instance);
+		RjLstm e0 = new RjLstm(d,null);
+		RjNodesState e1 = recurrentjavaToNodesState(d);
+		throwUnlessEqual(b, e0, e1);
+	}
+	
+	/** verify the scalars of b equal the scalars of {c0,c1} */
+	static void throwUnlessEqual(NeuralNetwork b, RjLstm c0, RjNodesState c1){
+		LstmLayer ll = (LstmLayer) b.layers.get(0);
+		FeedForwardLayer ff = (FeedForwardLayer) b.layers.get(1);
+		throwUnlessEqualScalars(ll.Wix, c0.Wix);
+		throwUnlessEqualScalars(ll.Wih, c0.Wih);
+		throwUnlessEqualScalars(ll.Wfx, c0.Wfx);
+		throwUnlessEqualScalars(ll.Wfh, c0.Wfh);
+		throwUnlessEqualScalars(ll.Wox, c0.Wox);
+		throwUnlessEqualScalars(ll.Woh, c0.Woh);
+		throwUnlessEqualScalars(ll.Wcx, c0.Wcx);
+		throwUnlessEqualScalars(ll.Wch, c0.Wch);
+		throwUnlessEqualScalars(ll.bi, c0.bi);
+		throwUnlessEqualScalars(ll.bf, c0.bf);
+		throwUnlessEqualScalars(ll.bo, c0.bo);
+		throwUnlessEqualScalars(ll.bc, c0.bc);
+		throwUnlessEqualScalars(ll.cellContext, c1.cellContext);
+		throwUnlessEqualScalars(ll.hiddenContext, c1.hiddenContext);
+		throwUnlessEqualScalars(ff.W, c0.outFeedforwardW);
+		throwUnlessEqualScalars(ff.b, c0.outFeedforwardB);
+	}
+	
+	static void throwUnlessEqualScalars(Matrix mut, MatD immut){
+		if(mut.w.length != immut.a.length || mut.rows != immut.rows || mut.cols != immut.cols)
+			throw new Error("diff sizes");
+		for(int i=0; i<mut.w.length; i++){
+			if(mut.w[i] != immut.a[i]) throw new Error("Differs at index "+i);
+		}
+	}
+	
+	static DataSequence toDataSequence(RjLearnStep[] steps){
+		DataStep[] ds = new DataStep[steps.length];
+		for(int i=0; i<steps.length; i++) ds[i] = toDatastep(steps[i]);
+		return new DataSequence(Arrays.asList(ds));
+	}
+	
+	/** 2d: sizeHid() and number of vecs to learn/predict in parallel.
+	Since these are new MatD, caller may still fill them and consider it immutable after that,
+	compared to if its unknown if others have a pointer to the MatD, modifying its contents
+	would modify their contents so would not be immutable.
+	*/
+	public RjNodesState newEmptyNodesStates(int parallelVecs){
+		//FIXME If Ive got these dim orders wrong it will learn mostly randomly.
+		return new RjNodesState(
+			//I plan to swap these dims in a future version cuz parallelIndex should be outer dim
+			//except like in RBM learnloop when zigzagIndex is even more outer than parallelIndex,
+			//but parallelIndex is still not the innermost dim in any of my code. That was a float[][][][].
+			//Recurrentjava does it as double[vecContents][parallelIndex] and parallelIndex is always 1
+			//(TODO change to allow parallel, unless it already works if use such a bigger Matrix and I dont know).
+			new MatD(sizeHid, parallelVecs),
+			//FIXME which order is it for output? Same as input?
+			new MatD(sizeHid, parallelVecs)
+		);
+		
+		//int hid = sizeHid();
+		
+		/*I want it to be double[parallelIndex][vecContents]
+		BUT its a problem if recurrentjava swaps those dims. Which way does recurrentjava do it?
+		public Matrix(int dim) {
+			this.rows = dim;
+			this.cols = 1;
+			this.w = new double[rows * cols];
+		So recurrentjava does it as double[vecContents][parallelIndex] and parallelIndex is always 1,
+		though Im unsure if recurrentjava would work anyways if parallelIndex > 1.
+		I have no plans to use recurrentjava that way since I will only do parallelIndex > 1 in opencl.
+		...
+		Should I use immutable.abstracttensordb.Tensor instead of double[][] and double[]?
+		NOT YET.
+		...
+		SOLUTION: I'm replacing double[][] with new class MatD thats similar to recurrentjava Matrix
+		except is immutable and only has 1 array instead of 3 mutable arrays,
+		and will copy between the 2 classes (new MatD each time, reuse Matrix during a calculation),
+		and will try to make small changes so recurrentjava calls opencl
+		instead of a bigger redesign where Lstm.java calls opencl. 
+		*/
+		
+		//return new NodesState(new double[][], new double[][])
+	}
+	
+	/** 2d: sizeHid() and number of vecs to learn/predict in parallel.
+	Since these are new MatD, caller may still fill them and consider it immutable after that,
+	compared to if its unknown if others have a pointer to the MatD, modifying its contents
+	would modify their contents so would not be immutable.
+	Since I'm unsure of the order of dims (FIXME) I'm calling emptyNodesStates and modifying the 1d array.
+	*/
+	public RjNodesState newRandomNodesStates(int parallelVecs, DoubleSupplier hiddenContextRands, DoubleSupplier cellContextRands){
+		RjNodesState n = newEmptyNodesStates(parallelVecs);
+		int siz = n.cellContext.a.length;
+		for(int i=0; i<siz; i++){
+			n.cellContext.a[i] = (float)hiddenContextRands.getAsDouble();
+			n.hiddenContext.a[i] = (float)cellContextRands.getAsDouble();
+		}
+		return n;
+	}
+	
+	private static NeuralNetwork recurrentjavaLstm(RjLstm weights, RjNodesState nodes, Unaflop outNonlinearity){
+		/*toMatD(rjlstm.Wix), //double[][] Wix
+		toMatD(rjlstm.Wih), //double[][] Wih,
+		toMatD(rjlstm.Wfx), //double[][] Wfx
+		toMatD(rjlstm.Wfh), //double[][] Wfh,
+		toMatD(rjlstm.Wox), //double[][] Wox,
+		toMatD(rjlstm.Woh), //double[][] Woh,
+		toMatD(rjlstm.Wcx), //double[][] Wcx,
+		toMatD(rjlstm.Wch), //double[][] Wch,
+		toMatD(rjff.W), //double[][] outFeedforwardW,
+		toMatD(rjlstm.bi), //double[] bi,
+		toMatD(rjlstm.bf), //double[] bf,
+		toMatD(rjlstm.bo), //double[] bo,
+		toMatD(rjlstm.bc), //double[] bc,
+		toMatD(rjff.b), //double[] outFeedforwardB,
+		nmhp //double[][] nmhp
+		*/
+		int parallelSize = nodes.cellContext.cols; //FIXME is cols parallelSize, or is it rows?
+		LstmLayer ll = new LstmLayer(
+			parallelSize,
+			toMatrix(weights.Wix),
+			toMatrix(weights.Wih),
+			toMatrix(weights.Wfx),
+			toMatrix(weights.Wfh),
+			toMatrix(weights.Wox),
+			toMatrix(weights.Woh),
+			toMatrix(weights.Wcx),
+			toMatrix(weights.Wch),
+			toMatrix(weights.bi),
+			toMatrix(weights.bf),
+			toMatrix(weights.bo),
+			toMatrix(weights.bc)
+		);
+		ll.hiddenContext = toMatrix(nodes.hiddenContext);
+		ll.cellContext = toMatrix(nodes.cellContext);
+		return new NeuralNetwork(Arrays.<Model>asList(
+			ll,
+			new FeedForwardLayer(
+				toMatrix(weights.outFeedforwardW),
+				toMatrix(weights.outFeedforwardB),
+				outNonlinearity
+			)
+		));
+	}
+	
+	private static MatD toMatD(Matrix m){
+		return new MatD(m.rows, m.w.clone(), m.stepCache.clone());
+	}
+	
+	private static DataStep toDatastep(RjLearnStep ls){
+		float[] empty = new float[0];
+		DataStep d = new DataStep(empty, empty);
+		d.input = toMatrix(ls.ins);
+		d.targetOutput = toMatrix(ls.outs);
+		return d;
+	}
+	
+	/** FIXME verify recurrentjava can handle more than 1 trainingvector
+	at a timestep (like Im going to do when optimizing for opencl).
+	*/
+	private static Matrix toMatrix(MatD m){
+		Matrix ret = new Matrix(m.a.clone());
+		ret.rows = m.rows;
+		ret.cols = m.cols;
+		return ret;
+	}
+	
+	/** FIXME verify recurrentjava can handle more than 1 trainingvector
+	at a timestep (like Im going to do when optimizing for opencl).
+	*
+	private static double[][] toMatD(Matrix m){
+		double[][] ret = new double[m.rows][m.cols];
+		int offset = 0;
+		for(int y=0; y<m.rows; y++){
+			System.arraycopy(m.w, offset, ret[y], 0, m.cols);
+			offset += m.cols;
+		}
+		return ret;
+	}
+	
+	/** [m.rows==1 so ignore this dim][m.cols] *
+	private static double[] toDoubles1d(Matrix m){
+		//cuz Recurrentjava is stateful, even though my code is stateless so my code can share arrays with itself
+		return m.w.clone();
+		//double[] ret = new double[m.cols];
+	}
+	
+	private static DataStep toDatastep(LearnStep io){
+		double[] empty = new double[0];
+		DataStep d = new DataStep(empty, empty);
+		d.input = toMatrix(io.ins);
+		d.targetOutput = toMatrix(io.outs);
+		return d;
+	}
+	
+	/** FIXME verify recurrentjava can handle more than 1 trainingvector
+	at a timestep (like Im going to do when optimizing for opencl).
+	*
+	private static Matrix toMatrix(double[][] d){
+		int rows = d.length, cols = d[0].length;
+		Matrix m = new Matrix(rows, cols);
+		int offset = 0;
+		for(int y=0; y<m.rows; y++){
+			System.arraycopy(d[y], 0, m.w, offset, m.cols);
+			offset += m.cols;
+		}
+		return m;
+	}
+	
+	/** [m.rows==1 so ignore this dim][m.cols] *
+	private static Matrix toMatrix(double[] d){
+		return new Matrix(d);
+	}*/
+	
+	private static DataSequence toDataSequence(List<RjLearnStep> sequence){
+		return new DataSequence(Arrays.asList(
+			(DataStep[])sequence.stream().map(RjLstm::toDatastep).toArray()
+		));
+	}
+
+}

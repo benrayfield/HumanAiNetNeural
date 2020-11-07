@@ -1,0 +1,13 @@
+{
+	"def" :
+	"javaThread:mutable.mouseai.experiments.RecurrentjavaTimeWindowMouseai.main(new String[]{\"1dViewOfChuasCircuit\"});\n\n/*Very similar to recurrentjavaLaggyBarelyLearningRecurrentjavaSwapstateMouseai except input is chosen by a sim of chuascircuit instead of by mouseY, so the pattern to learn is much simpler, so it has a chance of learning it with a small lstm and less cycles (since I havent opencl optimized recurrentjava yet).\n*/",
+	"prilist" :
+	[
+		"recurrentjavaLaggyBarelyLearningRecurrentjavaSwapstateMouseai",
+		"delfaultDownStack",
+		"r",
+		"recurrentjavaSingleChannelSwapstateLstmOn1dViewOfChuasCircuit"
+	],
+	"uiTime" :
+	1.563917868897288e9
+}

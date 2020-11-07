@@ -1,0 +1,11 @@
+{
+	"def" :
+	"javaThread:mutable.util.Throw.useThisFuncToTestStackTrace(\"throwInNewThreadSoYouCanCheckStderrToMakeSureItsStackTraceIsThere\");\n\n//The bug is it doesnt display mutable.util.Throw.s in stderr, only the Throwable.getMessage() not its stack trace.\n//I found that beanshell is calling java.lang.reflect.Method.invoke and its InvocationTargetException, at least as viewed in debugger, lacks the stacktrace, but in this other test outside of beanshell that also calls Method.invoke it correctly displays the stacktrace in stderr. Why doesnt it in beanshell?",
+	"prilist" :
+	[
+		"mindmapExperiments",
+		"t"
+	],
+	"uiTime" :
+	1.5642346041136608e9
+}

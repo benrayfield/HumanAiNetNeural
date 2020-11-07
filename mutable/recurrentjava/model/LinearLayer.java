@@ -13,12 +13,12 @@ public class LinearLayer implements Model {
 	Matrix W;
 	//no biases
 	
-	public LinearLayer(int inputDimension, int outputDimension, double initParamsStdDev, Random rng) {
+	public LinearLayer(int inputDimension, int outputDimension, float initParamsStdDev, Random rng) {
 		W = Matrix.rand(outputDimension, inputDimension, initParamsStdDev, rng);
 	}
 	
 	@Override
-	public Matrix forward(Matrix input, Graph g) throws Exception {
+	public Matrix forward(Matrix input, Graph g) {
 		Matrix out = g.mul(W, input);
 		return out;
 	}

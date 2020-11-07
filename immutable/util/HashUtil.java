@@ -1,8 +1,13 @@
 /** Ben F Rayfield offers this software opensource MIT license */
 package immutable.util;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import mutable.util.Files;
 
 public class HashUtil{
 	

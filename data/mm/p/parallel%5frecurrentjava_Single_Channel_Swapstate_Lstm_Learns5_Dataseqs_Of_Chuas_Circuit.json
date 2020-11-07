@@ -1,0 +1,11 @@
+{
+	"def" :
+	"uitool:mutable.mouseai.experiments.RecurrentjavaSingleChannelMouseai_todoParallel\ndataSource = \"1dViewOfChuasCircuit\";\narrs = \"IHmix HHmix Bmix IHnew HHnew Bnew IHreset HHreset Breset\".split(\"\\\\s\");\nlearnRate = .003;",
+	"prilist" :
+	[
+		"delfaultDownStack",
+		"p"
+	],
+	"uiTime" :
+	1.574197154911633e9
+}

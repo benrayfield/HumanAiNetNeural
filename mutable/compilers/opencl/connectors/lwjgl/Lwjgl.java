@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -26,7 +27,7 @@ import org.lwjgl.opencl.CLPlatform;
 import org.lwjgl.opencl.CLProgram;
 import org.lwjgl.opencl.Util;
 
-import mutable.compilers.opencl.Mem;
+import mutable.compilers.opencl.Mem_OLD;
 import mutable.compilers.opencl.OpenclUtil;
 
 /** Some parts modified from http://wiki.lwjgl.org/wiki/OpenCL_in_LWJGL.html#The_Full_Code
@@ -47,7 +48,15 @@ public class Lwjgl{
 	static{
 		lgErr("FIXME gargcol Lwjgl.errorBuff in finalize()?");
 	}
-	private final IntBuffer errorBuff = BufferUtils.createIntBuffer(1); //FIXME garbcol this in finalize()
+	final IntBuffer errorBuff = BufferUtils.createIntBuffer(1); //FIXME garbcol this in finalize()
+	
+	public CLContext context(){
+		return context;
+	}
+	
+	public CLCommandQueue queue(){
+		return queue;
+	}
 	
 	private static final Map<String,CompiledKernel> codeToCompiled = new WeakHashMap();
 	
@@ -56,7 +65,12 @@ public class Lwjgl{
 		CompiledKernel k = codeToCompiled.get(kernelCode);
 		if(k == null){
 			CLProgram prog = CL10.clCreateProgramWithSource(context, kernelCode, null);
-			int error = CL10.clBuildProgram(prog, devices.get(0), "", null);
+			String compilerParams = "-cl-opt-disable"; //FIXME remove this?
+			//String compilerParams = ""; //FIXME
+			int error = CL10.clBuildProgram(prog, devices.get(0), compilerParams, null);
+			//FIXME choose which of https://www.khronos.org/registry/OpenCL/sdk/1.0/docs/man/xhtml/clBuildProgram.html to use
+			//	for determinism but without telling it to be slower than it has to
+			//	for that determinism.
 			Util.checkCLError(error);
 			String kernName = OpenclUtil.findKernelName(kernelCode);
 			CLKernel kern = CL10.clCreateKernel(prog, kernName, null);
@@ -72,12 +86,21 @@ public class Lwjgl{
 	Calls lwjgl destructor on java finalize of this object.
 	TODO also caching of opencl objects should be done in here.
 	*/
-	public static synchronized Lwjgl instance() throws LWJGLException{
-		if(instance == null) instance = new Lwjgl();
+	public static synchronized Lwjgl instance(){
+		if(instance == null){
+			try{
+				instance = new Lwjgl();
+			}catch(LWJGLException e){ throw new Error(e); }
+		}
 		return instance;
 	}
 	
 	private Lwjgl() throws LWJGLException{
+		try{
+			Class.forName("org.lwjgl.opencl.CLObject");
+		}catch(ClassNotFoundException e){
+			throw new Error(e);
+		}
 		IntBuffer errorBuf = BufferUtils.createIntBuffer(1);
 		// Create OpenCL
 		CL.create();
@@ -131,6 +154,7 @@ public class Lwjgl{
 	and use % and / to get the indexs. TODO caches compiled opencl objects for that String by WeakHashMap<String,...>.
 	*/
 	public synchronized Object[] callOpencl(String kernelCode, int[] ndRange, Object... params){
+		boolean logDebug = true;
 		if(ndRange.length > 3) throw new Error("ndRange.length=="+ndRange.length+" > 3");
 		CompiledKernel k = compiledOrFromCache(kernelCode);
 		//FIXME only allows each param to be readonly or writeonly but not both,
@@ -157,6 +181,9 @@ public class Lwjgl{
 					else if(p instanceof Double) k.kernel.setArg(i, (double)p);
 					else throw new Error("TODO type "+p.getClass().getName());
 				}else if(p instanceof float[] || p instanceof float[][]){
+					
+					//http://wiki.lwjgl.org/wiki/OpenCL_in_LWJGL.html "allocating memory"
+					
 					int size1d = p instanceof float[] ? ((float[])p).length : ((float[][])p).length*((float[][])p)[0].length;
 					//floatBuffers[i] = FloatBuffer.wrap(fa);
 					//floatBuffers[i] = ByteBuffer.allocateDirect(fa.length*4).asFloatBuffer();
@@ -165,19 +192,24 @@ public class Lwjgl{
 					//System.out.println("openclWritesParam["+i+"]="+openclWritesParam[i]+" fb="+floatBuffers[i]+" paramI="+params[i]);
 					if(openclWritesParam[i]){
 						//System.out.println("IN param"+i+" NOT FILLING BUFFER SINCE OPENCL ONLY WRITES IT");
+						if(logDebug) lg("clCreateBuffer context CL_MEM_READ_ONLY "+(size1d*4)+" erbuf="+errorBuff);
 						clmems[i] = CL10.clCreateBuffer(context, CL10.CL_MEM_READ_ONLY, size1d*4, errorBuff);
 					}else{
 						float[] fa = p instanceof float[] ? (float[])p : OpenclUtil.array2dTo1d((float[][])p);
+						if(logDebug) lg("FloatBuffer put float[] then rewind");
 						((FloatBuffer)buffers[i]).put(fa);
 						((FloatBuffer)buffers[i]).rewind();
 						//for(int j=0; j<fa.length; j++){
 						//	//System.out.println("IN param"+i+" buf"+j+" = "+floatBuffers[i].get(j));
 						//}
+						if(logDebug) lg("clCreateBuffer context CL10.CL_MEM_WRITE_ONLY|CL10.CL_MEM_COPY_HOST_PTR "+buffers[i]+" erbuf="+errorBuff);
 						clmems[i] = CL10.clCreateBuffer(context, CL10.CL_MEM_WRITE_ONLY | CL10.CL_MEM_COPY_HOST_PTR, (FloatBuffer)buffers[i], errorBuff);
 					}
+					if(logDebug) lg("checkCLError");
 					Util.checkCLError(errorBuff.get(0)); //FIXME If theres an error erase it at end of call so can reuse errorBuff
 					k.kernel.setArg(i, clmems[i]);
 				}else if(p instanceof double[] || p instanceof double[][]){
+					if(logDebug) lg("not logging details of doubles");
 					int size1d = p instanceof double[] ? ((double[])p).length : ((double[][])p).length*((double[][])p)[0].length;
 					buffers[i] = BufferUtils.createFloatBuffer(size1d);
 					if(openclWritesParam[i]){
@@ -194,17 +226,22 @@ public class Lwjgl{
 					throw new Error("TODO upgrade OpenclUtil for type "+p.getClass().getName());
 				}
 			}
+			if(logDebug) lg("PointerBuffer globalWorkSize");
 			PointerBuffer globalWorkSize = BufferUtils.createPointerBuffer(ndRange.length);
 			//FIXME free globalWorkSize
 			for(int n=0; n<ndRange.length; n++){
-				globalWorkSize.put(0, ndRange[n]);
+				if(logDebug) lg("globalWorkSize put "+n+" "+ndRange[n]);
+				globalWorkSize.put(n, ndRange[n]);
 			}
+			if(logDebug) lg("clEnqueueNDRangeKernel queue "+k.kernel+" "+ndRange.length+" null "+globalWorkSize+" null null null");
 			CL10.clEnqueueNDRangeKernel(queue, k.kernel, ndRange.length, null, globalWorkSize, null, null, null);
 			for(int i=0; i<params.length; i++){
 				if(openclWritesParam[i]){
 					if(buffers[i] instanceof FloatBuffer){
+						if(logDebug) lg("clEnqueueReadBuffer queue "+clmems[i]+" CL_TRUE 0 "+buffers[i]+" null, null");
 						CL10.clEnqueueReadBuffer(queue, clmems[i], CL10.CL_TRUE, 0, (FloatBuffer)buffers[i], null, null);
 					}else if(buffers[i] instanceof DoubleBuffer){
+						if(logDebug) lg("clEnqueueReadBuffer doubles");
 						CL10.clEnqueueReadBuffer(queue, clmems[i], CL10.CL_TRUE, 0, (DoubleBuffer)buffers[i], null, null);
 					}else{
 						throw new Error("TODO upgrade OpenclUtil for type: "+buffers[i]);
@@ -212,9 +249,11 @@ public class Lwjgl{
 					
 				}
 			}
+			if(logDebug) lg("clFinish queue");
 			CL10.clFinish(queue);
 			Object[] ret = new Object[params.length];
 			for(int i=0; i<params.length; i++){
+				if(logDebug) lg("copy param "+i+" from (somekindof)Buffer to array");
 				Object p = params[i];
 				//FIXME consider read or write here. reuse if not modified
 				if(p instanceof Number){ //int, float (maybe others later)
@@ -265,6 +304,7 @@ public class Lwjgl{
 					throw new Error("TODO type "+p.getClass().getName());
 				}
 			}
+			if(logDebug) lg("return "+Arrays.asList(ret));
 			return ret;
 		}finally{
 			for(int i=0; i<params.length; i++){
@@ -277,6 +317,54 @@ public class Lwjgl{
 			//FIXME free the FloatBuffers (or only the nio direct ones?)
 			//FIXME should some or all o the FloatBuffers be nio direct? Which of them should be?
 		}
+	}
+	
+	public CLMem clmemWrapsJavaMem(FloatBuffer b){
+		return CL10.clCreateBuffer(context, CL10.CL_MEM_WRITE_ONLY | CL10.CL_MEM_USE_HOST_PTR, b, errorBuff);	
+	}
+	
+	/** caller must free the CLMem */
+	public CLMem copy(float[] a){
+		FloatBuffer b = BufferUtils.createFloatBuffer(a.length);
+		b.put(a);
+		b.rewind();
+		//return CL10.clCreateBuffer(context, CL10.CL_MEM_WRITE_ONLY | CL10.CL_MEM_COPY_HOST_PTR, b, errorBuff);
+		return CL10.clCreateBuffer(context, CL10.CL_MEM_READ_WRITE | CL10.CL_MEM_COPY_HOST_PTR, b, errorBuff);
+	}
+	
+	/** FIXME SECURITY: is there a problem in sharing errorBuff? What if it puts too many errors in it? Will it overflow? */
+	public CLMem newClmemReadableAndWritable(int byteSize){
+		return CL10.clCreateBuffer(context, CL10.CL_MEM_READ_WRITE, byteSize, errorBuff);
+	}
+	
+	public CLMem newClmemReadonly(int byteSize){
+		return CL10.clCreateBuffer(context, CL10.CL_MEM_READ_ONLY, byteSize, errorBuff);
+	}
+	
+	public void enqueueCopyClmemToFloatbuffer(CLMem mem, FloatBuffer buf){
+		lg("clEnqueueReadBuffer CLMem="+mem+" FloatBuffer="+buf);
+		CL10.clEnqueueReadBuffer(
+			queue,
+			mem,
+			CL10.CL_TRUE, //blocking_read
+			0L, //offset
+			buf,
+			null, //event_wait_list. https://www.khronos.org/registry/OpenCL/sdk/1.1/docs/man/xhtml/clEnqueueReadBuffer.html says can be null to not wait on anything.
+			null //https://www.khronos.org/registry/OpenCL/sdk/1.1/docs/man/xhtml/clEnqueueReadBuffer.html says this can be null if dont need to ask if the event is finished later
+		);
+	}
+	
+	public void enqueueCopyFloatbufferToCLMem(FloatBuffer buf, CLMem mem){
+		lg("clEnqueueWriteBuffer FloatBuffer="+buf+" CLMem="+mem);
+		CL10.clEnqueueWriteBuffer(
+			queue,
+			mem, 
+			CL10.CL_TRUE, //blocking_write
+			0L, //offset
+			buf, 
+			null, //event_wait_list
+			null //event
+		);
 	}
 	
 	/*public CLMem copyThenUseAsImmutable(float[][] in){
@@ -300,6 +388,12 @@ public class Lwjgl{
 		CL10.clEnqueueNDRangeKernel(queue, k.kernel, ndRange.length, null, globalWorkSize, null, null, null);
 		TODO
 	}*/
+	
+	public static PointerBuffer pointerBufferOf(int... content){
+		PointerBuffer p = BufferUtils.createPointerBuffer(content.length);
+		for(int i=0; i<content.length; i++) p.put(i, content[i]);
+		return p;
+	}
 	
 
 }

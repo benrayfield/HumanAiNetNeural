@@ -1,27 +1,32 @@
 package mutable.recurrentjava.matrix;
 
+import java.nio.FloatBuffer;
+
 public class MatrixStat{
 	
-	public final double[] radiusPerRow, radiusPerCol;
+	public final float[] radiusPerRow, radiusPerCol;
 	
-	public MatrixStat(double[] w, int rows, int cols){
-		if(rows*cols != w.length) throw new Error("sizes not match");
-		radiusPerRow = new double[rows];
-		radiusPerCol = new double[cols];
+	//public MatrixStat(float[] w, int rows, int cols){
+	public MatrixStat(FloatBuffer w, int rows, int cols){
+		if(rows*cols != w.capacity()) throw new Error("sizes not match");
+		radiusPerRow = new float[rows];
+		radiusPerCol = new float[cols];
 		int offset = 0;
 		for(int c=0; c<cols; c++){
 			for(int r=0; r<rows; r++){
-				double sq = w[offset]*w[offset];
+				float wo = w.get(offset);
+				float sq = wo*wo;
+				//float sq = w[offset]*w[offset];
 				radiusPerRow[r] += sq;
 				radiusPerCol[c] += sq;
 				offset++;
 			}
 		}
 		for(int c=0; c<cols; c++){
-			radiusPerCol[c] = Math.sqrt(radiusPerCol[c]);
+			radiusPerCol[c] = (float)Math.sqrt(radiusPerCol[c]);
 		}
 		for(int r=0; r<rows; r++){
-			radiusPerRow[r] = Math.sqrt(radiusPerRow[r]);
+			radiusPerRow[r] = (float)Math.sqrt(radiusPerRow[r]);
 		}
 	}
 

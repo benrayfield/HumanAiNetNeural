@@ -3,6 +3,7 @@ import java.io.File;
 import java.util.Random;
 
 import immutable.recurrentjava.flop.unary.LinearUnit;
+import immutable.rnn.RnnParams;
 import mutable.recurrentjava.model.Model;
 import mutable.recurrentjava.trainer.Trainer;
 import mutable.recurrentjava.util.NeuralNetworkHelper;
@@ -40,8 +41,8 @@ public class ExamplePaulGraham {
 		int bottleneckSize = 10; //one-hot input is squeezed through this
 		int hiddenDimension = 200;
 		int hiddenLayers = 1;
-		double learningRate = 0.001;
-		double initParamsStdDev = 0.08;
+		float learningRate = 0.001f;
+		float initParamsStdDev = 0.08f;
 		
 		Random rng = new Random();
 		//benrayfield commented this replaced with calling gru
@@ -51,7 +52,9 @@ public class ExamplePaulGraham {
 				data.outputDimension, data.getModelOutputUnitToUse(), 
 				initParamsStdDev, rng);
 		*/
+		int parallelSize = 1;
 		Model neuralnet = NeuralNetworkHelper.makeGru(
+			parallelSize,
 			data.inputDimension, 
 			hiddenDimension, hiddenLayers, 
 			data.outputDimension, data.getModelOutputUnitToUse(), 
@@ -70,8 +73,8 @@ public class ExamplePaulGraham {
 		//int trainingEpochs = 1000; //benrayfield changed
 		int trainingEpochs = 100; //benrayfield changed
 		
-		
-		Trainer.train(trainingEpochs, learningRate, neuralnet, data, reportEveryNthEpoch, initFromSaved, overwriteSaved, savePath, rng);
+		RnnParams p = new RnnParams().learnRate(learningRate);
+		Trainer.train(p, trainingEpochs, neuralnet, data, reportEveryNthEpoch, initFromSaved, overwriteSaved, savePath, rng);
 		
 		System.out.println("done.");
 	}

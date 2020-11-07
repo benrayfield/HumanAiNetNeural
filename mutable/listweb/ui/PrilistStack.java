@@ -129,12 +129,20 @@ public class PrilistStack extends JPanel implements Consumer<String> /**TODO Key
 					String nameClicked = (String) prilist.getModel().getElementAt(jlistIndex);
 					//Dont select, go in, or come out. Just change its todoTime.
 					if(dt!=dt){ //NaN means remove time
-						ListwebRoot.setTodoTime(nameClicked, 0); //in this func, for efficiency (NaN is slow), 0 means remove
+						if(Options.option(ListwebUtil.optionUseTodotimesAndHdwmyColors, false)){
+							ListwebRoot.setTodoTime(nameClicked, 0); //in this func, for efficiency (NaN is slow), 0 means remove
+						}else{
+							lg("Not setting todoTime cuz !optionUseTodotimesAndHdwmyColors");
+						}
 					}else{
 						double todoTime = ListwebRoot.getTodoTime(nameClicked);
 						if(e.getButton() == MouseEvent.BUTTON3) dt *= -1; //leftclick adds. rightclick subtracts.
 						double newTodoTime = todoTime==0 ? Time.now() : todoTime+dt; //set to now if didnt exist, else add
-						ListwebRoot.setTodoTime(nameClicked, newTodoTime);
+						if(Options.option(ListwebUtil.optionUseTodotimesAndHdwmyColors, false)){
+							ListwebRoot.setTodoTime(nameClicked, newTodoTime);
+						}else{
+							lg("Not setting todoTime cuz !optionUseTodotimesAndHdwmyColors");
+						}
 					}
 					//FIXME should already be subscribed to events for those in the list,
 					//but since todoTime being displayed beside name is a new feature,

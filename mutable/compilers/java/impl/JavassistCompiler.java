@@ -110,8 +110,13 @@ public class JavassistCompiler implements JavaCompiler{
 			
 			
 			String testClassToGet = RBM.class.getName();
+			//String testClassToGet = JavassistCompiler.class.getName();
+			File dir = mutable.util.Files.dirWhereThisProgramStarted;
+			String aClassFilePath = dir.getAbsolutePath()+"/"+testClassToGet.replace(".","/")+".class";
+			File f = new File(aClassFilePath);
+			if(!f.exists()) throw new Error("Didnt find example class file: "+f+" .class and .java files must be in same dir. Use \"allow output folders for source folders\" in Eclipse for example.");
 			try{
-				classPool.appendClassPath(mutable.util.Files.dirWhereThisProgramStarted.getAbsolutePath());
+				classPool.appendClassPath(dir.getAbsolutePath());
 				lgErr("It is "+classPool);
 				Class testClass = Class.forName(testClassToGet);
 				lgErr("testClass="+testClass);

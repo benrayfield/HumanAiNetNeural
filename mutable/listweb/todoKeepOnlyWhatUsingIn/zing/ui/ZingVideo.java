@@ -9,8 +9,8 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
+import mutable.util.ui.ScreenUtil;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.Rand;
-import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.ScreenUtil;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.err.Err;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.err.Todo;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.vec.impl.ConstBitstring;

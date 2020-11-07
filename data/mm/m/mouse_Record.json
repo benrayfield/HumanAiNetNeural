@@ -1,0 +1,19 @@
+{
+	"def" :
+	"",
+	"prilist" :
+	[
+		"mouseRecord",
+		"uitool:mutable.uitool.dataset.MouseYRecorder32HzToJsonNumArrayInStdOut",
+		"uitool:mutable.uitool.dataset.MouseYRecorder32HzToSerializableFloat1d",
+		"---recorders---",
+		"mouseY2019-12-3-3p",
+		"mouseY2019-12-3-210p",
+		"---json---",
+		"start",
+		"delfaultDownStack",
+		"m"
+	],
+	"uiTime" :
+	1.575403349171036e9
+}

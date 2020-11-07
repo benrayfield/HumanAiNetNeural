@@ -1,6 +1,7 @@
 package mutable.recurrentjava.datastructs;
 import java.io.Serializable;
 
+import immutable.compilers.opencl_fixmeMoveSomePartsToImmutablePackage.FSyMem;
 import mutable.recurrentjava.matrix.Matrix;
 
 
@@ -14,7 +15,7 @@ public class DataStep implements Serializable {
 		
 	}
 	
-	public DataStep(double[] input, double[] targetOutput) {
+	public DataStep(float[] input, float[] targetOutput) {
 		this.input = new Matrix(input);
 		if (targetOutput != null) {
 			this.targetOutput = new Matrix(targetOutput);
@@ -24,13 +25,16 @@ public class DataStep implements Serializable {
 	@Override
 	public String toString() {
 		String result = "";
-		for (int i = 0; i < input.w.length; i++) {
-			result += String.format("%.5f", input.w[i]) + "\t";
+		int end = input.buf("w").capacity();
+		FSyMem inputW = input.mem("w");
+		for (int i = 0; i < end; i++) {
+			result += String.format("%.5f", inputW.get(i)) + "\t";
 		}
 		result += "\t->\t";
 		if (targetOutput != null) {
-			for (int i = 0; i < targetOutput.w.length; i++) {
-				result += String.format("%.5f", targetOutput.w[i]) + "\t";
+			FSyMem targetOutputW = targetOutput.mem("w");
+			for (int i = 0; i < targetOutputW.mem().capacity(); i++) {
+				result += String.format("%.5f", targetOutputW.get(i)) + "\t";
 			}
 		}
 		else {

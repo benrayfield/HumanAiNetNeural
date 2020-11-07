@@ -3,23 +3,27 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import immutable.compilers.opencl_fixmeMoveSomePartsToImmutablePackage.FSyMem;
+import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.MathUtil;
 import mutable.recurrentjava.matrix.Matrix;
 
 public class Util {
 	
 	public static int pickIndexFromRandomVector(Matrix probs, Random r) throws Exception {
-		double mass = 1.0;
-		for (int i = 0; i < probs.w.length; i++) {
-			double prob = probs.w[i] / mass;
-			if (r.nextDouble() < prob) {
+		float mass = 1f;
+		FSyMem probsW = probs.mem("w");
+		for (int i = 0; i < probs.size; i++) {
+			float prob = probsW.get(i) / mass;
+			if(MathUtil.weightedCoinFlip(prob, r)){
+			//if (r.nextFloat() < prob) {
 				return i;
 			}
-			mass -= probs.w[i];
+			mass -= probsW.get(i);
 		}
 		throw new Exception("no target index selected");
 	}
 	
-	public static double median(List<Double> vals) {
+	public static float median(List<Float> vals) {
 		Collections.sort(vals);
 		int mid = vals.size()/2;
 		if (vals.size() % 2 == 1) {

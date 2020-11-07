@@ -1,0 +1,11 @@
+{
+	"def" :
+	"uitool:mutable.uitool.dataset.MouseYRecorder32HzToSerializableFloat1d\n\n//TODO? save as data format \"float[]:..floatData...\" by some securehash, such as maybe doubleSha256, and have it display that hash so can give it in other places in researchmindmap.",
+	"prilist" :
+	[
+		"mouseRecord",
+		"u"
+	],
+	"uiTime" :
+	1.5753998441808794e9
+}

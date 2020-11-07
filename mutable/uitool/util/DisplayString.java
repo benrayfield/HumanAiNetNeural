@@ -1,5 +1,5 @@
 package mutable.uitool.util;
-
+import static mutable.util.Lg.*;
 import java.awt.Dimension;
 
 import javax.swing.JScrollPane;
@@ -21,6 +21,7 @@ public class DisplayString extends Uitool{
 	}
 	
 	public void accept(Object o){
+		lg("DisplayString this.hashcode="+this.hashCode()+" accept(Object)="+o);
 		textarea.setText(o==null ? "null" : o.toString());
 	}
 

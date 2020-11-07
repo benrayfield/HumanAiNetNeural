@@ -18,7 +18,7 @@ public class NeuralNetwork implements Model {
 	}
 	
 	@Override
-	public Matrix forward(Matrix input, Graph g) throws Exception {
+	public Matrix forward(Matrix input, Graph g) {
 		Matrix prev = input;
 		for (Model layer : layers) {
 			prev = layer.forward(prev, g);

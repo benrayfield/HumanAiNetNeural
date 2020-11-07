@@ -3,8 +3,11 @@ package immutable.util;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Random;
 import java.util.function.DoubleUnaryOperator;
 
@@ -14,12 +17,25 @@ public class MathUtil{
 		return 1/(1+Math.exp(-x));
 	}
 	
+	/*public static double bisigmoid(double x){
+		//reutrn sigmoid(x)
+		tanh
+	}*/
+	
 	/** bellcurve height scaled so max is 1 */
 	public static double zbell(double stdDev){
 		return Math.exp(-stdDev*stdDev/2);
 	}
 	
 	public static int indexOfMax(double[] d){
+		int m=0;
+		for(int i=1; i<d.length; i++){
+			if(d[m] < d[i]) m = i;
+		}
+		return m;
+	}
+	
+	public static int indexOfMax(float[] d){
 		int m=0;
 		for(int i=1; i<d.length; i++){
 			if(d[m] < d[i]) m = i;
@@ -121,6 +137,18 @@ public class MathUtil{
 		double[] ret = new double[lenSum];
 		int filled = 0;
 		for(double[] array : arrays){
+			System.arraycopy(array, 0, ret, filled, array.length);
+			filled += array.length;
+		}
+		return ret;
+	}
+	
+	public static float[] cat(float[]... arrays){
+		int lenSum = 0;
+		for(float[] array : arrays) lenSum += array.length;
+		float[] ret = new float[lenSum];
+		int filled = 0;
+		for(float[] array : arrays){
 			System.arraycopy(array, 0, ret, filled, array.length);
 			filled += array.length;
 		}
@@ -732,6 +760,61 @@ public class MathUtil{
 				out.write((byte)(g>>>i));
 			}
 		}
+	}
+	
+	public static float[][] newArraySameSizeAs(float[][] a, float fill){
+		float[][] ret = new float[a.length][];
+		for(int i=0; i<a.length; i++){
+			ret[i] = new float[a[i].length];
+			if(fill != 0) Arrays.fill(ret[i], fill);
+		}
+		return ret;
+	}
+	
+	public static float[][][] newArraySameSizeAs(float[][][] a, float fill){
+		float[][][] ret = new float[a.length][][];
+		for(int i=0; i<a.length; i++){
+			ret[i] = newArraySameSizeAs(a[i], fill);
+		}
+		return ret;
+	}
+	
+	/** each internal array can be different size */
+	public static boolean arraysAreSameSize(float[][] a, float[][] b){
+		if(a.length != b.length) return false;
+		for(int i=0; i<a.length; i++){
+			if(a[i].length != b[i].length) return false;
+		}
+		return true;
+	}
+	
+	/** each internal array can be different size */
+	public static boolean arraysAreSameSize(float[][][] a, float[][][] b){
+		if(a.length != b.length) return false;
+		for(int i=0; i<a.length; i++){
+			if(!arraysAreSameSize(a[i],b[i])) return false;
+		}
+		return true;
+	}
+	
+	public static <T> List<T> reverse(List<T> list){
+		List l = new ArrayList();
+		for(int i=list.size()-1; i>=0; i--){
+			l.add(list.get(i));
+		}
+		return Collections.unmodifiableList(l);
+	}
+	
+	public static byte[] intsToBytes(int[] ints){
+		byte[] b = new byte[ints.length*4];
+		for(int i=0; i<ints.length; i++){
+			int j = ints[i];
+			b[i<<2] = (byte)(j>>>24);
+			b[i<<2+1] = (byte)(j>>>16);
+			b[i<<2+2] = (byte)(j>>>8);
+			b[i<<2+3] = (byte)j;
+		}
+		return b;
 	}
 	
 }

@@ -136,6 +136,15 @@ public class ListwebUtil{
 		if(!s.equals(unescaped)) throw new Err("Escape or unescape broken");
 	}
 	
+	public static final String optionUseTodotimesAndHdwmyColors =
+		"(makes search slow, TODO fix that) use left column of todoTimes and !hdwmy colors";
+	
+	public static final String optionSearchInDefs =
+		"(TODO is this option obsolte?) Search in defs (the text lowest in the window for each name), may be slow";
+	
+	public static final String optionAllowRunCodeInDefs =
+		"(TODO is this option obsolte?) Allow mindmap to run code typed into defs, useful for programmers (SECURITY WARNING)";
+	
 	/** toggleScreen opens and closes the bigger per-pixel part of the window called "screen" */
 	public static JMenuBar newListwebMenuBar(String selectionPtr, String upStackName, String downStackName, Runnable toggleScreen){
 		JMenuBar menu = new JMenuBar();
@@ -216,8 +225,9 @@ public class ListwebUtil{
 			);
 			options.add(chk);
 		};
-		addBooleanOption.accept("Search in defs (the text lowest in the window for each name), may be slow");
-		addBooleanOption.accept("Allow mindmap to run code typed into defs, useful for programmers (SECURITY WARNING)");
+		addBooleanOption.accept(optionUseTodotimesAndHdwmyColors);
+		addBooleanOption.accept(optionSearchInDefs);
+		addBooleanOption.accept(optionAllowRunCodeInDefs);
 		menu.add(options);
 		JMenu help = new JMenu("Help");
 		help.add(new JLabel("This is a web. Anything can connect to anything."));

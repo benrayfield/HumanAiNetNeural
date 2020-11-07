@@ -31,8 +31,15 @@ import immutable.util.BoltzenUtil;
 import mutable.util.Lg;
 //import mutable.util.Parallel;
 import mutable.util.Rand;
+import immutable.rbm.learnloop.OpenclProgs;
 
-/** Realtime, meant to be used at gaming speed such as for prediction of
+/** Originally just RBM, but its such a similar datastruct I'm also using it for FeedForward 2019-7+,
+andf or that I'm adding a rmsprop norming datastruct per edge like in RecurrentJava Matrix datastruct.
+The rmsprop norming is only used in feedforward, not RBM mode, and causes every edge to
+change about the same amount over recent few batches to resist the exploding/vanishing gradient problem.
+Since FeedForward uses RBM datastruct, it can also use the RBM UIs.
+<br><br>
+Realtime, meant to be used at gaming speed such as for prediction of
 mouse movements in timeWindow, so it takes only 1 data point at a time.
 Immutable and ForkEditable (so you can try multiple variations in parallel),
 but its callers responsibility (and could be enforced in javassist code extending lambda classes)
@@ -202,6 +209,104 @@ public class RBM implements Serializable{
 		
 	}
 	
+	/** return[nolay][vector][node]. For compatibility with the other predict func, its first array index zigzag=0.
+	It only needs 1 zigzag cuz feedforward only does 1 fullUp and no downward inference,
+	and the thing you want is at top nolay not visibleNodes, but other than that its the same as RBM.
+	Learning is different than RBM. Its backprop with rmsprop instead of contrastiveDivergence. 
+	vecs[vector][visibleNode].
+	You probably want return[nolays-1][each vector][each node], the high nolay for each input vector.
+	attsMerged[nolay][node].
+	*/
+	public float[][][] predictFeedforward_noAttention(float[][] vecs){
+		float[][] att = evenlySpreadAttsLev1(weight);
+		return vecsZigzag(1, att, vecs, weight, nolayIsScalar, false, biasPerNodeside)[0];
+	}
+	
+	/** predictFeedforward[nolay][vector][node]. return[nolay][vector][node]. correctOut[nolays-1][each vector][each node].
+	FIXME does this need correctout?
+	TODO remove derivMult param if not norming by bisigmoid (such as only by rmsprop).
+	attsMerged[nolay][node].
+	*/
+	public RBM learnFeedforward_noAttention(float[][][] predictFeedforward, float[][] correctOut, float learnRate,
+			float derivMult, boolean bisigmoidNormBeforeRmsprop){
+		float[][][] deriv_nolay_vec_node = backprop_noAttention(predictFeedforward, correctOut, learnRate, derivMult, bisigmoidNormBeforeRmsprop);
+		float[][][] newWeight = MathUtil.newArraySameSizeAs(weight, 0);
+		
+		/*TODO how much to update rmspropPerWeight? recurrentjava Trainer.updateModelParams has these vars
+		for updating rmsprop. I'll make them params in RBM.java and give them similar defaults but as floats,
+		except rmsprop_decay will be 1-recurrentjavaDecayRate cuz decay is supposed to be near 0 not near 1.
+		//public static double decayRate = 0.999;
+		//public static double smoothEpsilon = 1e-8;
+		//public static double gradientClipValue = 5;
+		//public static double regularization = 0.000001; // L2 regularization strength
+		
+		rmspropPerWeight
+		
+		TODO rmsprop per weight
+		for()
+		TODO compute new weights.
+		
+		
+		rmsprop per weight, goes where? It will be an instance var
+		*/
+		throw new Error("TODO");
+	}
+	
+	/** returns deriv[nolay][vector][node] (optionally normed by derivMult and bisigmoidNormBeforeRmsprop) */
+	public float[][][] backprop_noAttention(float[][][] predictFeedforward, float[][] correctOut, float learnRate,
+			float derivMult, boolean bisigmoidNormBeforeRmsprop){
+		
+		int nolays = predictFeedforward.length, vecs = predictFeedforward[0].length; //nodes varies per nolay
+		float[][][] deriv = MathUtil.newArraySameSizeAs(predictFeedforward, 0);
+		int highestNodes = predictFeedforward[nolays-1][0].length;
+		for(int v=0; v<vecs; v++){
+			for(int highNode=0; highNode<highestNodes; highNode++){
+				//no derivMult here but use it everywhere below
+				deriv[nolays-1][v][highNode] = correctOut[v][highNode] - predictFeedforward[nolays-1][v][highNode];
+			}
+		}
+		for(int lowNolay=nolays-2; lowNolay>=0; lowNolay--){ //derivs in each next lower layer starting second from top all the way down to visibleNodes
+			int highNolay = lowNolay+1;
+			int lowNodes = predictFeedforward[lowNolay][0].length;
+			int highNodes = predictFeedforward[highNolay][0].length;
+			//FIXME Should this, like the RNN SineShift learning code, ignore predictFeedforward in computing derivs
+			//and only use predictFeedforward after all derivs are computed? Or should it use predictFeedforward in both?
+			
+			//TODO optimize?: I could write a matmul that already used the dims in other order instead of swapDims.
+			float[][] deriv_v_highNode = deriv[highNolay];
+			float[][] weight_lowNode_highNode = weight[lowNolay];
+			float[][] weight_highNode_lowNode = swapDims(weight_lowNode_highNode);
+			float[][] weightedSumForLowNolayDeriv_v_lowNode = OpenclProgs.matmul(deriv_v_highNode, weight_highNode_lowNode);
+			//float[][] lowNolayDeriv_v_lowNode =
+			for(int v=0; v<vecs; v++){
+				for(int lowNode=0; lowNode<lowNodes; lowNode++){
+					float weightedSum = weightedSumForLowNolayDeriv_v_lowNode[v][lowNode] * derivMult;
+					deriv[lowNolay][v][lowNode] = bisigmoidNormBeforeRmsprop ? (float)Math.tanh(weightedSum) : weightedSum;
+				}
+			}
+			
+			/*
+			Matmul derivs by weights. Make sure not to get it backward. Use OpenclProgs.matmul(float[][] bc, float[][] cd) returns bd.
+			
+			What 2 things do I want to mult (ignoring dim order for now)?
+				deriv[highNolay][v][n]
+				weight[lowNolay][lowNode][highNode]
+				return[v][lowNode]
+			
+			for(int v=0; v<vecs; v++){
+				
+			}*/
+		}
+		
+		/*for(int l=0; l<nolays; l++){
+			for(int v=0; v<vecs; v++){
+				deriv[]
+			}
+		}*/
+		//throw new Error("TODO predict and learn funcs for rmsprop feedforward");
+		return deriv;
+	}
+	
 	
 	
 	/** FIXME? This isnt used in some of the newer code, but it is in LearnLoopParam and is hardcoded as .25f instead of reading it from here.
@@ -215,6 +320,15 @@ public class RBM implements Serializable{
 	*
 	public final float[][] targetNodeAve;
 	*/
+	
+	/** TODO this is being added for FeedForward. See comment of this class */
+	public final float[][][] rmspropPerWeight;
+	
+	/** 4 vars like in mutable.recurrentjava.trainer.Trainer.updateModelParams */
+	public final float rmsprop_decay; //= .001f;
+	public final float rmsprop_smoothEpsilon; //= 1e-8f; //FIXME is this so small it rounds to 0 as float? was double. 
+	public final float rmsprop_gradientClipValue; //= 5;
+	public final float rmsprop_regularization; //= .000001f; // L2 regularization strength
 	
 	/** TODO For visibleNodes, slidingvec (a set of LearningVec being gradually learned in random set per batch)
 	should write targetNodeAve[0][node] and targetNodeDev[0][node] like a DecayBell of those vecs,
@@ -544,6 +658,11 @@ public class RBM implements Serializable{
 	public RBM(){
 		this(
 			"", //comment
+			new float[0][][], //rmspropPerWeight
+			.001f, //rmsprop_decay
+			1e-8f, //rmsprop_smoothEpsilon 
+			5f, //rmsprop_gradientClipValue
+			.000001f, //rmsprop_regularization
 			new float[0][][], //weight
 			new float[0][][], //weightVelocity
 			new float[0][][], //nmhp
@@ -566,6 +685,11 @@ public class RBM implements Serializable{
 	}
 	public RBM(
 		String comment,
+		float[][][] rmspropPerWeight,
+		float rmsprop_decay,
+		float rmsprop_smoothEpsilon, 
+		float rmsprop_gradientClipValue,
+		float rmsprop_regularization,
 		float[][][] weight,
 		float[][][] weightVelocity,
 		float[][][] nmhp,
@@ -596,6 +720,11 @@ public class RBM implements Serializable{
 		NavigableMap other
 	){
 		this.comment = comment;
+		this.rmspropPerWeight = rmspropPerWeight;
+		this.rmsprop_decay = rmsprop_decay;
+		this.rmsprop_smoothEpsilon = rmsprop_smoothEpsilon;
+		this.rmsprop_gradientClipValue = rmsprop_gradientClipValue;
+		this.rmsprop_regularization = rmsprop_regularization;
 		this.weight = weight;
 		this.weightVelocity = weightVelocity;
 		this.nmhp = nmhp;
@@ -630,6 +759,11 @@ public class RBM implements Serializable{
 	public RBM(NavigableMap map){
 		this(
 			(String)map.get("comment"),
+			(float[][][])map.get("rmspropPerWeight"),
+			(float)(double)map.get("rmsprop_decay"),
+			(float)(double)map.get("rmsprop_smoothEpsilon"),
+			(float)(double)map.get("rmsprop_gradientClipValue"),
+			(float)(double)map.get("rmsprop_regularization"),
 			(float[][][])map.get("weight"),
 			(float[][][])map.get("weightVelocity"),
 			(float[][][])map.get("nmhp"),
@@ -695,42 +829,75 @@ public class RBM implements Serializable{
 	}
 
 	public RBM setComment(String comment){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+	}
+	
+	/** only used with feedforward mode, not RBM mode */
+	public RBM setRmspropPerWeight(float[][][] rmspropPerWeight){
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+	}
+	
+	/** only used with feedforward mode, not RBM mode */
+	public RBM setRmspropDecay(float rmsprop_decay){
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+	}
+	
+	/** only used with feedforward mode, not RBM mode */
+	public RBM setRmspropSmoothEpsilon(float rmsprop_smoothEpsilon){
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);		
+	}
+	
+	/** only used with feedforward mode, not RBM mode */
+	public RBM setRmspropGradientClipValue(float rmsprop_gradientClipValue){
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);		
+	}
+	
+	/** only used with feedforward mode, not RBM mode */
+	public RBM setRmspropRegularization(float rmsprop_regularization){
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+	}
+	
+	public static float[][][] newRmspropPerWeightArraySameSizeAs(float[][][] a){
+		//FIXME is this an ok value to start rmsprop?
+		return MathUtil.newArraySameSizeAs(a, 1);
 	}
 	
 	public RBM setWeight(float[][][] weight){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		float[][][] rmspropPerWeight = MathUtil.arraysAreSameSize(weight,this.rmspropPerWeight)
+			? this.rmspropPerWeight
+			: newRmspropPerWeightArraySameSizeAs(weight);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM setWeightVelocity(float[][][] weightVelocity){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM setNmhp(float[][][] nmhp){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM setWeightDecay(float weightDecay){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM setWeightVelocityDecay(float weightVelocityDecay){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM setNolayIsScalar(boolean[] nolayIsScalar){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	//public RBM setLowNNolaysAreScalar(int lowNNolaysAreScalar){
 	//	return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	//}
 	
 	public RBM setLearnByIncompleteBoltzenCode(boolean learnByIncompleteBoltzenCode){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM setTargetNodeAve(float[][] targetNodeAve){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM setLearnRate(float learnRateForAllEdlays){
@@ -741,40 +908,40 @@ public class RBM implements Serializable{
 	
 	public RBM setLearnRatePerEdlay(float[] learnRatePerEdlay){
 		//if(learnRate < -1 || 1 < learnRate) throw new Error("learnRate "+learnRate+" must be in range -1 to 1 (FIXME this is far too low for the old code but should align well to boltzen experimental code which uses it as decay toward certain energy instead of about individual weights).");
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM setZigzagsLearn(int zigzagsLearn){
 		if((zigzagsLearn&1)!=1) throw new Error("zigzagsLearn must be odd: "+zigzagsLearn);
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM setAttLev1RelRangeForLearn(float AttLev1RelRangeForLearn){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM setAttLev1RelRangeForPredict(float AttLev1RelRangeForPredict){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM setAttLev2PerNodeside(float[][] attLev2PerNodeside){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	/** See comment of learnFunc field */
 	public RBM setLearnFunc(String learnFunc){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM setBiasPerNodeside(float[][] biasPerNodeside){
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	/** in Map other. TODO use ufnode forkEditable maplists for log cost instead of linear. */
 	public RBM put(Object key, Object value){
 		NavigableMap other = JsonDS.jsonSet(this.other, key, value);
 		//return new RBM(weight, targetNodeAve, zigzagPredict, zigzagLearn, zigzagNorm, learnRate, in, AttLev1RelRangeForLearn, rand, other);
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, attLev1RelRangeForLearn, attLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM pushLayerFromNoThrow(RBM prototype){
@@ -788,6 +955,7 @@ public class RBM implements Serializable{
 	*/
 	public RBM pushLayerFrom(RBM prototype){
 		String comment = this.comment;
+		float[][][] rmspropPerWeight = pushLayerFromArray(this.rmspropPerWeight, prototype.rmspropPerWeight);
 		float[][][] weight = pushLayerFromArray(this.weight, prototype.weight);
 		int newNolays = weight.length+1;
 		int sizeOfNolayToPush = nolaySize(weight, newNolays-1);
@@ -815,12 +983,13 @@ public class RBM implements Serializable{
 		NavigableMap other = this.other;
 		if(1<2) throw new Error("FIXME check all fields are pushed and popped.");
 		boolean[] new_nolayIsScalar = pushLayerFromArray(this.nolayIsScalar, prototype.nolayIsScalar);
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, new_nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, AttLev1RelRangeForLearn, AttLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, new_nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, AttLev1RelRangeForLearn, AttLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	/** opposite of pushLayerFrom(RBM) */
 	public RBM popLayer(){
 		String comment = this.comment;
+		float[][][] rmspropPerWeight = popLayerFromArray(this.rmspropPerWeight);
 		float[][][] weight = popLayerFromArray(this.weight);
 		float[][][] weightVelocity = popLayerFromArray(this.weightVelocity);
 		float weightVelocityDecay = this.weightVelocityDecay;
@@ -847,7 +1016,7 @@ public class RBM implements Serializable{
 		NavigableMap other = this.other;
 		//FIXME if(1<2) throw new Error("FIXME check all fields are pushed and popped.");
 		boolean[] new_nolayIsScalar = popLayerFromArray(nolayIsScalar);
-		return new RBM(comment, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, new_nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, AttLev1RelRangeForLearn, AttLev1RelRangeForPredict, learnFunc, other);
+		return new RBM(comment, rmspropPerWeight, rmsprop_decay, rmsprop_smoothEpsilon, rmsprop_gradientClipValue, rmsprop_regularization, weight, weightVelocity, nmhp, biasPerNodeside, attLev2PerNodeside, weightDecay, weightVelocityDecay, new_nolayIsScalar, learnByIncompleteBoltzenCode, targetNodeAve, targetNodeDev, edlayIsFeedforward, learnRatePerEdlay, zigzagsLearn, AttLev1RelRangeForLearn, AttLev1RelRangeForPredict, learnFunc, other);
 	}
 	
 	public RBM popLayerNoThrow(){
@@ -2786,7 +2955,9 @@ public class RBM implements Serializable{
 		return attLev1;
 	}
 	
-	/** [nolaySide][node], where nolaySide ranges 0 to nolays*2-1 */
+	/** [nolaySide][node], where nolaySide ranges 0 to nolays*2-1.
+	TODO optimize.
+	*/
 	public static float[][] evenlySpreadAttsLev1(float[][][] weight){
 		return randomAttsLev1InAllHiddenLayers(weight, 0f, null, true);
 	}

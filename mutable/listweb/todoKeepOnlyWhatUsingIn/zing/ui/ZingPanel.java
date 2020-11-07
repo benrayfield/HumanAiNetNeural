@@ -13,7 +13,7 @@ import mutable.listweb.Debug;
 import mutable.listweb.ListwebRoot;
 import mutable.listweb.ListwebUtil;
 import mutable.listweb.start.StartSingleUserWindow;
-import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.ScreenUtil;
+import mutable.util.ui.ScreenUtil;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.Time;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.err.Err;
 import mutable.listweb.ui.DefPanel;

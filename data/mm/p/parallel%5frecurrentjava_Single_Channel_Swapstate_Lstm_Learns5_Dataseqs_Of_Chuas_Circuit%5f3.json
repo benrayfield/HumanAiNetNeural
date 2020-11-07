@@ -1,0 +1,12 @@
+{
+	"def" :
+	"uitool:mutable.mouseai.experiments.RecurrentjavaSingleChannelMouseai_todoParallel\n//FIXME parallelGruIsProbablyOverfittgruingCuzBackpropsAreMergedButIOnlyPlannedToMergeOnPlaceAcrossTheMatmulCuzWeightsDontChangeDuringBackpropAndThatsAHugeOptimization\ndataSource = \"1dViewOfChuasCircuit\";\narrs = \"IHmix HHmix Bmix IHnew HHnew Bnew IHreset HHreset Breset\".split(\"\\\\s\");\nlearnRate = .003;\nrjTrainerDecayRate = .999;\nrjTrainerSmoothEpsilon = 1e-8;\nrjTrainerGradientClipValue = 5;\nrjTrainerRegularization = .000001;",
+	"prilist" :
+	[
+		"lstmExperiments",
+		"delfaultDownStack",
+		"p"
+	],
+	"uiTime" :
+	1.575398484930857e9
+}

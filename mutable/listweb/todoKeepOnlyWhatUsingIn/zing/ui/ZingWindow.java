@@ -11,7 +11,7 @@ import javax.swing.*;
 
 import mutable.listweb.ListwebRoot;
 import mutable.listweb.ListwebUtil;
-import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.ScreenUtil;
+import mutable.util.ui.ScreenUtil;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.err.Err;
 
 public class ZingWindow extends JFrame{

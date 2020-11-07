@@ -7,10 +7,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-import immutable.lstm.RjLearnStep;
 import immutable.recurrentjava.flop.unary.SigmoidUnit;
+import immutable.rnn.recurrentjava.RjLearnStep;
 import immutable.util.MathUtil;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.Rand;
+import mutable.recurrentjava.autodiff.CpuGraph;
 import mutable.recurrentjava.autodiff.Graph;
 import mutable.recurrentjava.datastructs.DataSequence;
 import mutable.recurrentjava.datastructs.DataStep;
@@ -48,7 +49,8 @@ public class SwapStateLstm{
 	FIXME?? is this graph being used at all? I'm not backproping in it. swappedState is probably all thats needed
 	and could use a new Graph every prediction to get the same effect???
 	*/
-	protected final Graph predictionGraph = new Graph(false);
+	protected final Graph predictionGraph = new CpuGraph(false);
+	//protected final Graph predictionGraph = new Graph(false);
 
 	/** These lists may contain the same InsOuts multiple times or not,
 	such as if its made of a List<InsOuts> and a timewindow over various partially overlapping ranges. 
@@ -62,7 +64,7 @@ public class SwapStateLstm{
 		this.ins = ins;
 		this.hiddens = hiddens;
 		this.outs = outs;
-		double initParamsStdDev = 0.08;
+		float initParamsStdDev = .08f;
 		int parallelSize = 1;
 		neuralnet = NeuralNetworkHelper.makeLstm(
 			parallelSize,
@@ -91,12 +93,12 @@ public class SwapStateLstm{
 	/** FIXME verify recurrentjava can handle more than 1 trainingvector
 	at a timestep (like Im going to do when optimizing for opencl).
 	*/
-	public static Matrix toMatrix(double[][] d){
+	public static Matrix toMatrix(float[][] d){
 		int rows = d.length, cols = d[0].length;
 		Matrix m = new Matrix(rows, cols);
 		int offset = 0;
 		for(int y=0; y<m.rows; y++){
-			System.arraycopy(d[y], 0, m.w, offset, m.cols);
+			System.arraycopy(d[y], 0, m.buf("w"), offset, m.cols);
 			offset += m.cols;
 		}
 		return m;
@@ -105,11 +107,11 @@ public class SwapStateLstm{
 	/** FIXME verify recurrentjava can handle more than 1 trainingvector
 	at a timestep (like Im going to do when optimizing for opencl).
 	*/
-	public static double[][] toDoubles(Matrix m){
-		double[][] ret = new double[m.rows][m.cols];
+	public static float[][] toDoubles(Matrix m){
+		float[][] ret = new float[m.rows][m.cols];
 		int offset = 0;
 		for(int y=0; y<m.rows; y++){
-			System.arraycopy(m.w, offset, ret[y], 0, m.cols);
+			System.arraycopy(m.buf("w"), offset, ret[y], 0, m.cols);
 			offset += m.cols;
 		}
 		return ret;
@@ -145,7 +147,7 @@ public class SwapStateLstm{
 			+" cuz not treemap.");
 	}
 	
-	public void learn(double learnRate, List<RjLearnStep> sequence){
+	public void learn(float learnRate, List<RjLearnStep> sequence){
 		throw new Error("TODO");
 		/*if(!sequence.isEmpty() && sequence.get(0).ins.length > 1)
 			throw new Error("TODO verify recurrentjava can learn multiple training vecs in a timestep (like Im planning to do in opencl upgrade either way) before doing that here (else will only do it in opencl).");

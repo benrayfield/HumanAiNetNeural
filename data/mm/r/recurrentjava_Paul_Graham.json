@@ -1,0 +1,12 @@
+{
+	"def" :
+	"javaThread:\ntry{\n\tSystem.err.println(\"START:\");\n\tmutable.recurrentjava.ExamplePaulGraham.main(new String[0])\n\tSystem.err.println(\"END:\");\n}catch(Throwable t){\n\tSystem.err.println(\"ERRERR:\");\n\t//t.printStackTrace(System.err);\n}",
+	"prilist" :
+	[
+		"lstmExperiments",
+		"r",
+		"delfaultDownStack"
+	],
+	"uiTime" :
+	1.568388551182901e9
+}

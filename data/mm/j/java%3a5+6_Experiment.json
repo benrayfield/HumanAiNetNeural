@@ -1,0 +1,12 @@
+{
+	"def" :
+	"java:5+6",
+	"prilist" :
+	[
+		"java:5+6Experiment",
+		"computeExperiments",
+		"j"
+	],
+	"uiTime" :
+	1.5643222955038776e9
+}

@@ -16,6 +16,8 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import mutable.listweb.ListwebRoot;
+import mutable.listweb.ListwebUtil;
+import mutable.listweb.Options;
 import mutable.listweb.todoKeepOnlyWhatUsingIn.humanaicore.common.Time;
 
 /** listens (Consumer<String>) for changes to aSelectPtr.selectedName
@@ -85,6 +87,9 @@ public class TodoTimeEditable extends JPanel implements Consumer<String>{
 		if(fraction < 14/size) return 60*60; //HHP
 		return 5*60; //MM by 5 minute intervals
 	}
+	
+	/** used if Options.option(ListwebUtil.optionUseTodotimesAndHdwmyColors, false) is true */
+	public static final String timeToStringDisabled = timeToString(0.).replace('.','x');
 	
 	public static String timeToString(double time){
 		if(time == 0) return ".................";

@@ -75,13 +75,13 @@ public class bAbI extends DataSet{
 		lossTraining = new LossSoftmax();
 		lossReporting = new LossArgMax();
 
-		inputDimension = training.get(0).steps.get(0).input.w.length;
+		inputDimension = training.get(0).steps.get(0).input.size;
 
 		int loc = 0;
 		while (training.get(0).steps.get(loc).targetOutput == null) {
 			loc++;
 		}
-		outputDimension = training.get(0).steps.get(loc).targetOutput.w.length;
+		outputDimension = training.get(0).steps.get(loc).targetOutput.size;
 	}
 	
 	public static final String[] TASK_NAMES = {
@@ -295,10 +295,10 @@ public class bAbI extends DataSet{
 			for (Statement statement : story.statements) {
 				if (statement.isFact) {
 					for (int w = 0; w < statement.fact.size(); w++) {
-						double[] input = new double[inputDimension];
+						float[] input = new float[inputDimension];
 						for (int i = 0; i < inputDimension; i++) {
 							if (statement.fact.get(w).equals(inputVocab.get(i))) {
-								input[i] = 1.0;
+								input[i] = 1f;
 								break;
 							}
 						}
@@ -307,21 +307,21 @@ public class bAbI extends DataSet{
 				}
 				else {
 					for (int w = 0; w < statement.question.size(); w++) {
-						double[] input = new double[inputDimension];
-						double[] targetOutput = null;
+						float[] input = new float[inputDimension];
+						float[] targetOutput = null;
 						for (int i = 0; i < inputDimension; i++) {
 							if (statement.question.get(w).equals(inputVocab.get(i))) {
-								input[i] = 1.0;
+								input[i] = 1f;
 								break;
 							}
 						}
 						steps.add(new DataStep(input, targetOutput));
 					}
-					double[] input = new double[inputDimension];
-					double[] targetOutput = new double[outputDimension];
+					float[] input = new float[inputDimension];
+					float[] targetOutput = new float[outputDimension];
 					for (int i = 0; i < outputDimension; i++) {
 						if (statement.answer.equals(outputVocab.get(i))) {
-							targetOutput[i] = 1.0;
+							targetOutput[i] = 1f;
 							break;
 						}
 					}

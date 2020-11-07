@@ -1,6 +1,7 @@
 package mutable.recurrentjava;
 import java.util.Random;
 
+import immutable.rnn.RnnParams;
 import mutable.recurrentjava.model.Model;
 import mutable.recurrentjava.trainer.Trainer;
 import mutable.recurrentjava.util.NeuralNetworkHelper;
@@ -16,8 +17,8 @@ public class ExampleEmbeddedReberGrammar {
 		
 		int hiddenDimension = 12;
 		int hiddenLayers = 1;
-		double learningRate = 0.001;
-		double initParamsStdDev = 0.08;
+		float learningRate = .001f;
+		float initParamsStdDev = .08f;
 
 		int parallelSize = 1;
 		Model nn = NeuralNetworkHelper.makeLstm(
@@ -30,7 +31,8 @@ public class ExampleEmbeddedReberGrammar {
 		int reportEveryNthEpoch = 10;
 		int trainingEpochs = 1000;
 		
-		Trainer.train(trainingEpochs, learningRate, nn, data, reportEveryNthEpoch, rng);
+		RnnParams p = new RnnParams().learnRate(learningRate);
+		Trainer.train(p, trainingEpochs, nn, data, reportEveryNthEpoch, rng);
 		
 		System.out.println("done.");
 	}

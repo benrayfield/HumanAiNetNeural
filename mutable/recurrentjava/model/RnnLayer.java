@@ -20,7 +20,7 @@ public class RnnLayer implements Model {
 	
 	Unaflop f;
 	
-	public RnnLayer(int inputDimension, int outputDimension, Unaflop hiddenUnit, double initParamsStdDev, Random rng) {
+	public RnnLayer(int inputDimension, int outputDimension, Unaflop hiddenUnit, float initParamsStdDev, Random rng) {
 		this.inputDimension = inputDimension;
 		this.outputDimension = outputDimension;
 		this.f = hiddenUnit;
@@ -29,7 +29,7 @@ public class RnnLayer implements Model {
 	}
 	
 	@Override
-	public Matrix forward(Matrix input, Graph g) throws Exception {
+	public Matrix forward(Matrix input, Graph g){
 		
 		Matrix concat = g.concatVectors(input, context);
 		

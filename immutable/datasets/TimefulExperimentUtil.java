@@ -1,3 +1,4 @@
+/** Ben F Rayfield offers this software opensource MIT license */
 package immutable.datasets;
 
 /** Timeless means without sequence, such as RBM etc naturally learns. Timeful is what RNN etc tends to learn. */

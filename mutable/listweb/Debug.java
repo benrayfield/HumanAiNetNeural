@@ -1,9 +1,11 @@
+/** Ben F Rayfield offers this software opensource MIT license */
 package mutable.listweb;
 
 public class Debug{
 	private Debug(){}
 	
 	public static final boolean
+		logGetTodoTime = false,
 		logSwingLock = false,
 		logJListEvents = false,
 		logSwingInvoke = false,

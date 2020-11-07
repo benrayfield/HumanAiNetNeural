@@ -10,8 +10,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import immutable.compilers.opencl_fixmeMoveSomePartsToImmutablePackage.FSyMem;
 import immutable.recurrentjava.flop.unary.LinearUnit;
 import immutable.recurrentjava.flop.unary.Unaflop;
+import mutable.recurrentjava.autodiff.CpuGraph;
 import mutable.recurrentjava.autodiff.Graph;
 import mutable.recurrentjava.datastructs.DataSequence;
 import mutable.recurrentjava.datastructs.DataSet;
@@ -30,44 +32,50 @@ public class TextGeneration extends DataSet {
 	private static Map<String, Integer> charToIndex = new HashMap<>();
 	private static Map<Integer, String> indexToChar = new HashMap<>();
 	private static int dimension;
-	private static double[] vecStartEnd;
+	private static float[] vecStartEnd;
 	private static final int START_END_TOKEN_INDEX = 0;
 	private static Set<String> words = new HashSet<>();
 	
-	public static List<String> generateText(Model model, int steps, boolean argmax, double temperature, Random rng) throws Exception {
+	public static List<String> generateText(Model model, int steps, boolean argmax, float temperature, Random rng) throws Exception{
 		List<String> lines = new ArrayList<>();
+		//ArMat start = new ArMat(dimension);
 		Matrix start = new Matrix(dimension);
-		start.w[START_END_TOKEN_INDEX] = 1.0;
+		FSyMem startW = start.mem("w");
+		//start.w[START_END_TOKEN_INDEX] = 1f;
+		startW.put(START_END_TOKEN_INDEX, 1f);
 		model.resetState();
-		Graph g = new Graph(false);
-		Matrix input = start.clone();
+		//Graph g = new Graph(false);
+		Graph g = new CpuGraph(false);
+		Matrix input = (Matrix)start.clone();
 		String line = "";
 		for (int s = 0; s < steps; s++) {
 			Matrix logprobs = model.forward(input, g);
 			Matrix probs = LossSoftmax.getSoftmaxProbs(logprobs, temperature);
+			FSyMem probsW = probs.mem("w");
 			
 			if (singleWordAutocorrect) {
 				Matrix possible = Matrix.ones(dimension, 1);
+				FSyMem possibleW = possible.mem("w");
 				try {
 					possible = singleWordAutocorrect(line);
 				}
 				catch (Exception e) {
 					//TODO: still may be some lingering bugs, so don't constrain by possible if a problem occurs. Fix later..
 				}
-				double tot = 0;
+				float tot = 0;
 				//remove impossible transitions
-				for (int i = 0; i < probs.w.length; i++) {
-					probs.w[i] *= possible.w[i];
-					tot += probs.w[i];
+				for (int i = 0; i < probsW.size; i++) {
+					probsW.putMult(i, possibleW.get(i));
+					tot += probsW.get(i);
 				}
 				
 				//normalize to sum of 1.0 again
-				for (int i = 0; i < probs.w.length; i++) {
-					probs.w[i] /= tot;
+				for (int i = 0; i < probs.size; i++){
+					probsW.putDivide(i, tot);
 				}
 				
-				for (int i = 0; i < probs.w.length; i++) {
-					if (probs.w[i] > 0 && possible.w[i] == 0) {
+				for (int i = 0; i < probs.size; i++) {
+					if (probsW.get(i) > 0 && possibleW.get(i) == 0) {
 						throw new Exception("Illegal transition");
 					}
 				}
@@ -75,10 +83,10 @@ public class TextGeneration extends DataSet {
 			
 			int indxChosen = -1;
 			if (argmax) {
-				double high = Double.NEGATIVE_INFINITY;
-				for (int i = 0; i < probs.w.length; i++) {
-					if (probs.w[i] > high) {
-						high = probs.w[i];
+				float high = Float.NEGATIVE_INFINITY;
+				for (int i = 0; i < probsW.size; i++) {
+					if (probsW.get(i) > high) {
+						high = probsW.get(i);
 						indxChosen = i;
 					}
 				}
@@ -89,18 +97,20 @@ public class TextGeneration extends DataSet {
 			if (indxChosen == START_END_TOKEN_INDEX) {
 				lines.add(line);
 				line = "";
-				input = start.clone();
-				g = new Graph(false);
+				input = (Matrix)start.clone();
+				//g = new Graph(false);
+				g = new CpuGraph(false);
 				model.resetState();
-				input = start.clone();
+				input = (Matrix)start.clone();
 			}
 			else {
 				String ch = indexToChar.get(indxChosen);
 				line += ch;
-				for (int i = 0; i < input.w.length; i++) {
-					input.w[i] = 0;
+				FSyMem inputW = input.mem("w");
+				for (int i = 0; i < input.size; i++) {
+					inputW.put(i, 0);
 				}
-				input.w[indxChosen] = 1.0;
+				inputW.put(indxChosen, 1f);
 			}
 		}
 		if (line.equals("") == false) {
@@ -135,24 +145,25 @@ public class TextGeneration extends DataSet {
 			throw new Exception("unexpected, no matches for '"+lastPartialWord+"'");
 		}
 		Matrix result = new Matrix(dimension);
+		FSyMem resultW = result.mem("w");
 		boolean hit = false;
 		for (String match : matches) {
 			if (match.length() < lastPartialWord.length()) {
 				throw new Exception("How is match shorter than partial word?");
 			}
 			if (lastPartialWord.equals(match)) {
-				result.w[charToIndex.get(" ")] = 1.0;
-				result.w[START_END_TOKEN_INDEX] = 1.0;
+				resultW.put(charToIndex.get(" "), 1f);
+				resultW.put(START_END_TOKEN_INDEX, 1f);
 				continue;
 			}
 			
 			String nextChar = match.charAt(lastPartialWord.length()) + "";
-			result.w[charToIndex.get(nextChar)] = 1.0;
+			resultW.put(charToIndex.get(nextChar), 1f);
 			hit = true;
 		}
 		if (hit == false) {
-			result.w[charToIndex.get(" ")] = 1.0;
-			result.w[START_END_TOKEN_INDEX] = 1.0;
+			resultW.put(charToIndex.get(" "), 1f);
+			resultW.put(START_END_TOKEN_INDEX, 1f);
 		}
 		return result;
 		
@@ -163,8 +174,9 @@ public class TextGeneration extends DataSet {
 		for (int s = 0; s < sequence.steps.size() - 1; s++) {
 			DataStep step = sequence.steps.get(s);
 			int index = -1;
-			for (int i = 0; i < step.targetOutput.w.length; i++) {
-				if (step.targetOutput.w[i] == 1) {
+			FSyMem stepTargetOutputW = step.targetOutput.mem("w");
+			for (int i = 0; i < stepTargetOutputW.size; i++) {
+				if (stepTargetOutputW.get(i) == 1) {
 					index = i;
 					break;
 				}
@@ -214,19 +226,19 @@ public class TextGeneration extends DataSet {
 		}
 		
 		dimension = chars.size() + 1;
-		vecStartEnd = new double[dimension];
-		vecStartEnd[START_END_TOKEN_INDEX] = 1.0;
+		vecStartEnd = new float[dimension];
+		vecStartEnd[START_END_TOKEN_INDEX] = 1f;
 		
 		List<DataSequence> sequences = new ArrayList<>();
 		int size = 0;
 		for (String line : lines) {
-			List<double[]> vecs = new ArrayList<>();
+			List<float[]> vecs = new ArrayList<>();
 			vecs.add(vecStartEnd);
 			for (int i = 0; i < line.length(); i++) {
 				String ch = line.charAt(i) + "";
 				int index = charToIndex.get(ch);
-				double[] vec = new double[dimension];
-				vec[index] = 1.0;
+				float[] vec = new float[dimension];
+				vec[index] = 1f;
 				vecs.add(vec);
 			}
 			vecs.add(vecStartEnd);
@@ -244,12 +256,12 @@ public class TextGeneration extends DataSet {
 		training = sequences;
 		lossTraining = new LossSoftmax();
 		lossReporting = new LossSoftmax();
-		inputDimension = sequences.get(0).steps.get(0).input.w.length;
+		inputDimension = sequences.get(0).steps.get(0).input.size;
 		int loc = 0;
 		while (sequences.get(0).steps.get(loc).targetOutput == null) {
 			loc++;
 		}
-		outputDimension = sequences.get(0).steps.get(loc).targetOutput.w.length;
+		outputDimension = sequences.get(0).steps.get(loc).targetOutput.size;
 	}
 
 	@Override
@@ -258,11 +270,11 @@ public class TextGeneration extends DataSet {
 		System.out.println("REPORT:");
 		if (reportPerplexity) {
 			System.out.println("\ncalculating perplexity over entire data set...");
-			double perplexity = LossSoftmax.calculateMedianPerplexity(model, training);
+			float perplexity = LossSoftmax.calculateMedianPerplexity(model, training);
 			System.out.println("\nMedian Perplexity = " + String.format("%.4f", perplexity));
 		}
-		double[] temperatures = {1, 0.75, 0.5, 0.25, 0.1};
-		for (double temperature : temperatures) {
+		float[] temperatures = {1f, 0.75f, 0.5f, 0.25f, 0.1f};
+		for (float temperature : temperatures) {
 			if (TextGeneration.singleWordAutocorrect) {
 				System.out.println("\nTemperature "+temperature+" prediction (with single word autocorrect):");
 			}
@@ -286,7 +298,7 @@ public class TextGeneration extends DataSet {
 		else {
 			System.out.println("\nArgmax prediction:");
 		}
-		List<String> guess = TextGeneration.generateText(model, reportSequenceLength, true, 1.0, rng);
+		List<String> guess = TextGeneration.generateText(model, reportSequenceLength, true, 1f, rng);
 		for (int i = 0; i < guess.size(); i++) {
 			if (i == guess.size()-1) {
 				System.out.println("\t\"" + guess.get(i) + "...\"");

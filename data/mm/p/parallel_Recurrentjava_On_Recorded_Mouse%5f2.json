@@ -1,0 +1,12 @@
+{
+	"def" :
+	"uitool:mutable.mouseai.experiments.RecurrentjavaSingleChannelMouseai_todoParallel\n//this works for parallelSize 5. TODO make that a param.\ndataSource = \"mm:mouseY2019-12-3-3p\";\nlearnRate = .001;\nrjTrainerDecayRate = .993;\nrjTrainerSmoothEpsilon = 1e-8;\nrjTrainerGradientClipValue = 1.5;\nrjTrainerRegularization = .0001;",
+	"prilist" :
+	[
+		"lstmExperiments",
+		"delfaultDownStack",
+		"p"
+	],
+	"uiTime" :
+	1.5754048698763752e9
+}

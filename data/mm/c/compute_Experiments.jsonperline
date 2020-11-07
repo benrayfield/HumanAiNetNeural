@@ -1,0 +1,6 @@
+[1.55275170007194e9,"computeExperiments",{"def" :"","prilist" :["java:5+6Experiment","start","delfaultDownStack","c"],"uiTime" :1.5527516797372658e9}]
+[1.5530191800112157e9,"computeExperiments",{"def" :"","prilist" :["computeExperiments","java:5+6Experiment","===testsWorking===","===testsTodo===","start","delfaultDownStack","c"],"uiTime" :1.5530191489860704e9}]
+[1.5561266325632823e9,"computeExperiments",{"def" :"","prilist" :["computeExperiments","java:5+6Experiment","===testsWorking===","===testsTodo===","start","c"],"uiTime" :1.5561265811647215e9}]
+[1.5609985200021818e9,"computeExperiments",{"def" :"","prilist" :["computeExperiments","java:5+6Experiment","===testsWorking===","===testsTodo===","start","c","delfaultDownStack"],"uiTime" :1.560998464647796e9}]
+[1.5664794600027852e9,"computeExperiments",{"def" :"","prilist" :["computeExperiments","java:5+6Experiment","===testsWorking===","test_callOpenclForest","===testsTodo===","start","c","delfaultDownStack"],"uiTime" :1.5664794563177416e9}]
+[1.5664852200015714e9,"computeExperiments",{"def" :"","prilist" :["computeExperiments","test_callOpenclForest","java:5+6Experiment","===testsWorking===","===testsTodo===","start","c","delfaultDownStack"],"uiTime" :1.5664851628300407e9}]

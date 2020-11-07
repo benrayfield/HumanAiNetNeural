@@ -1,3 +1,4 @@
+/** Ben F Rayfield offers this software opensource MIT license */
 package mutable.uitool;
 import java.io.Closeable;
 import java.util.function.Consumer;

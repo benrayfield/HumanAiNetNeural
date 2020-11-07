@@ -13,8 +13,12 @@ import javax.swing.JTextArea;
 import javax.swing.ListCellRenderer;
 
 import mutable.listweb.ListwebRoot;
+import mutable.listweb.ListwebUtil;
+import mutable.listweb.Options;
 
 public class PrilistRender extends JPanel implements ListCellRenderer{
+	
+	//TODO merge duplicate code between PrilistRender and StackRender
 	
 	public final Color textSelected, textNormal, backgroundSelected, background;
 	
@@ -55,6 +59,8 @@ public class PrilistRender extends JPanel implements ListCellRenderer{
 	static final Color bgH = new Color(0xaaaaaa);
 	static final Color bgNoPriority = new Color(0x999999);
 	
+	static final Color bgIfIgnoringHdwmy = bgHdwmy;
+	
 	public Component getListCellRendererComponent(
 			JList list, Object value, int index, boolean isSelected, boolean cellHasFocus){
 		//TODO merge duplicate code between StackRender and PrilistRender
@@ -68,28 +74,37 @@ public class PrilistRender extends JPanel implements ListCellRenderer{
 		
 		int selectedIndex = list.getSelectedIndex();
 		boolean selected = index==selectedIndex;
-		double todoTime = ListwebRoot.getTodoTime(name);
-		timeLabel.setText(TodoTimeEditable.timeToString(todoTime)+' ');
-		nameLabel.setText(name);
 		
-		Color bg = selected ? backgroundSelected : background;
-		if(!selected){
-			try{
-				String def = ListwebRoot.def(name);
-				if(def.startsWith("!hdwmy")) bg = bgHdwmy;
-				else if(def.startsWith("!hdwm")) bg = bgHdwm;
-				else if(def.startsWith("!hdw")) bg = bgHdw;
-				else if(def.startsWith("!hd")) bg = bgHd;
-				else if(def.startsWith("!h")) bg = bgH;
-				else bg = bgNoPriority;
-			}catch(Throwable t){ //ListwebRoot.def(name); throws if name is too long
-				//leave as other color.
+		Color bg;
+		
+		boolean optionUseTodotimesAndHdwmyColors =
+			Options.option(ListwebUtil.optionUseTodotimesAndHdwmyColors, false);
+		if(optionUseTodotimesAndHdwmyColors){
+			double todoTime = ListwebRoot.getTodoTime(name);
+			timeLabel.setText(TodoTimeEditable.timeToString(todoTime)+' ');
+			bg = selected ? backgroundSelected : background;
+			if(!selected){
+				try{
+					String def = ListwebRoot.def(name);
+					if(def.startsWith("!hdwmy")) bg = bgHdwmy;
+					else if(def.startsWith("!hdwm")) bg = bgHdwm;
+					else if(def.startsWith("!hdw")) bg = bgHdw;
+					else if(def.startsWith("!hd")) bg = bgHd;
+					else if(def.startsWith("!h")) bg = bgH;
+					else bg = bgNoPriority;
+				}catch(Throwable t){ //ListwebRoot.def(name); throws if name is too long
+					//leave as other color.
+				}
+				//There are a few names so long the program crashes when load them,
+				//or at least when load in certain combos that seem not to happen anymore (as of 2018-12-12),
+				//but at least this should prevent the crashing thats been happening.
+				//I'll fix the long names eventually.
 			}
-			//There are a few names so long the program crashes when load them,
-			//or at least when load in certain combos that seem not to happen anymore (as of 2018-12-12),
-			//but at least this should prevent the crashing thats been happening.
-			//I'll fix the long names eventually.
+		}else{
+			timeLabel.setText(TodoTimeEditable.timeToStringDisabled+' ');
+			bg = selected ? backgroundSelected : bgIfIgnoringHdwmy;
 		}
+		nameLabel.setText(name);
 		
 		setBackground(bg);
 		timeLabel.setBackground(selected ? backgroundSelected : bg);

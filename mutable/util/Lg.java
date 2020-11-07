@@ -15,6 +15,11 @@ public class Lg{
 	
 	static final SortedSet<String> todos = Collections.synchronizedSortedSet(new TreeSet());
 	
+	static final String prefix(){
+		//return Time.nowStr()+"> ";
+		return "> ";
+	}
+	
 	public static void todo(String s){
 		if(!todos.contains(s)){
 			todos.add(s);
@@ -31,10 +36,11 @@ public class Lg{
 	}
 	
 	public static void lg(String line){
-		System.out.println(line);
+		System.out.println(prefix()+line);
 	}
 	
 	public static void lgErr(Throwable t){
+		System.err.print(prefix());
 		t.printStackTrace(System.err);
 	}
 	
@@ -43,7 +49,7 @@ public class Lg{
 	}
 	
 	public static void lgErr(String line){
-		System.err.println(line);
+		System.err.print(prefix()+line);
 	}
 	
 	public static void lgToUser(Object o){
@@ -51,7 +57,7 @@ public class Lg{
 	}
 	
 	public static void lgToUser(String line){
-		System.err.println(line);
+		System.err.println(prefix()+line);
 	}
 	
 	/** Since JSelfModify doesnt have a User system yet, just room for expansion,

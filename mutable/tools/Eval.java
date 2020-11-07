@@ -1,6 +1,7 @@
 package mutable.tools;
 import static mutable.util.Lg.*;
 import java.awt.Component;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
@@ -9,6 +10,7 @@ import javax.swing.JLabel;
 
 import bsh.EvalError;
 import bsh.Interpreter;
+import bsh.TargetError;
 import immutable.util.Text;
 import mutable.listweb.ListwebRoot;
 import mutable.listweb.start.StartSingleUserWindow;
@@ -65,19 +67,27 @@ public class Eval{
 				String javaclassName = firstToken.substring("uitool:".length());
 				//String restOfString = code.substring(firstToken.length()).trim();
 				Class c = findClass(javaclassName);
+				Constructor cn = null;
 				try{
-					Uitool u = (Uitool) c.getConstructor().newInstance();
-					u.accept(code);
-					return u;
+					cn = c.getConstructor();
 					//return c.getConstructor(String.class).newInstance(restOfString);
-				}catch(NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e){
+				}catch(NoSuchMethodException e){
 					//th 	row new Error("No constructor in "+c+" that takes a String");
 					throw new Error("No parameterless constructor in "+c);
+				}
+				try{
+					Uitool u = (Uitool) cn.newInstance();
+					u.accept(code);
+					return u;
+				}catch(InvocationTargetException | IllegalAccessException | InstantiationException e){
+					throw new Error("Error running constructor "+cn+". ", e);
 				}
 			}else if(code.startsWith("java:")){
 				String javaCode = code.substring("java:".length()).trim();
 				//String javaCode = code;
-				return evalJava(javaCode);
+				Object ret = evalJava(javaCode);
+				lg("return: "+ret);
+				return ret;
 				//throw new Error("ERROR_IN_THIS_CODE: "+code);
 			}else if(code.startsWith("javaThread:")){ //run java code in new thread
 				String javaCode = code.substring("javaThread:".length()).trim();
@@ -117,6 +127,12 @@ public class Eval{
 			Object o = i.eval(javaCode);
 			lg("END evalJava: "+javaCode);
 			return o;
+		}catch(TargetError t){
+			lg("ENDBYTHROW evalJava: "+javaCode);
+			Throwable targ = t.getTarget();
+			if(targ instanceof Error) throw (Error)targ;
+			if(targ instanceof RuntimeException) throw (RuntimeException)targ;
+			throw new RuntimeException(targ);
 		}catch(Throwable t){
 			lg("ENDBYTHROW evalJava: "+javaCode);
 			throw new Error(t);

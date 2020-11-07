@@ -3,18 +3,18 @@ package immutable.recurrentjava.flop.unary;
 public class RectifiedLinearUnit implements Unaflop {
 
 	private static final long serialVersionUID = 1L;
-	private double slope;
+	private float slope;
 	
 	public RectifiedLinearUnit() {
 		this.slope = 0;
 	}
 	
-	public RectifiedLinearUnit(double slope) {
+	public RectifiedLinearUnit(float slope) {
 		this.slope = slope;
 	}
 	
 	@Override
-	public double forward(double x) {
+	public float forward(float x) {
 		if (x >= 0) {
 			return x;
 		}
@@ -24,9 +24,9 @@ public class RectifiedLinearUnit implements Unaflop {
 	}
 
 	@Override
-	public double deriv(double x) {
+	public float deriv(float x) {
 		if (x >= 0) {
-			return 1.0;
+			return 1f;
 		}
 		else {
 			return slope;

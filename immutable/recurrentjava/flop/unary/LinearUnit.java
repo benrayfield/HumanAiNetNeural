@@ -6,13 +6,13 @@ public class LinearUnit implements Unaflop {
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public double forward(double x) {
+	public float forward(float x) {
 		return x;
 	}
 
 	@Override
-	public double deriv(double x) {
-		return 1.0;
+	public float deriv(float x) {
+		return 1f;
 	}
 	
 	//benrayfield added this

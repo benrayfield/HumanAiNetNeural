@@ -1,0 +1,17 @@
+{
+	"def" :
+	"",
+	"prilist" :
+	[
+		"unidimgames",
+		"u",
+		"unidimtools",
+		"start",
+		"firstCharNames",
+		"uitool:mutable.uitool.dataset.MouseYRecorder32HzToSerializableFloat1d",
+		"uitool:mutable.uitool.dataset.MouseYRecorder32HzToJsonNumArrayInStdOut.MouseYRecorder32HzToJsonNumArrayInStdOut()",
+		"uitool:mutable.uitool.dataset.MouseYRecorder32HzToJsonNumArrayInStdOut"
+	],
+	"uiTime" :
+	1.575400121799805e9
+}

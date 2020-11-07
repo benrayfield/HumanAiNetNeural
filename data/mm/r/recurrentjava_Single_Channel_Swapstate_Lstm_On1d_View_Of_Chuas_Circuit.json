@@ -1,0 +1,14 @@
+{
+	"def" :
+	"!hdwmy\nuitool:mutable.mouseai.experiments.RecurrentjavaSingleChannelMouseai\ndataSource = \"1dViewOfChuasCircuit\";\narrs = \"IHmix HHmix Bmix IHnew HHnew Bnew IHreset HHreset Breset\".split(\"\\\\s\");\nlearnRate = .018;",
+	"prilist" :
+	[
+		"recurrentjavaSingleChannelSwapstateLstmOn1dViewOfChuasCircuit",
+		"recurrentjavaSwapstateLstmOn1dViewOfChuasCircuit",
+		"lstmExperiments",
+		"r",
+		"delfaultDownStack"
+	],
+	"uiTime" :
+	1.5685664512000856e9
+}

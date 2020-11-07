@@ -405,5 +405,15 @@ public class Text{
 		}
 		return s.trim();
 	}
+	
+	public static String stat(double... d){
+		double ave = MathUtil.ave(d), dev = MathUtil.devGivenAve(ave, d);
+		return "{double["+d.length+"] ave="+ave+" dev="+dev+"}";
+	}
+	
+	public static String stat(float... d){
+		float ave = MathUtil.ave(d), dev = MathUtil.devGivenAve(ave, d);
+		return "{float["+d.length+"] ave="+ave+" dev="+dev+"}";
+	}
 
 }

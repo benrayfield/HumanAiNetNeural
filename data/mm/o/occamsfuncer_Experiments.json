@@ -1,0 +1,19 @@
+{
+	"def" :
+	"",
+	"prilist" :
+	[
+		"occamsfuncerExperiments",
+		"immutable.occamsfuncer.ocfn3s.spec.sparseTuringMachine.test.TestOcfn3SparseTuringMachine",
+		"===testsWorking===",
+		"ocfnTestXPlusY",
+		"===testsTodo===",
+		"TODO hookInBasicOccamsfuncerDemoToResearchMindmapUseInRightSideOfScreenTheSameAsOtherExperiments",
+		"----------------------------",
+		"o",
+		"start",
+		"delfaultDownStack"
+	],
+	"uiTime" :
+	1.5952779528386083e9
+}

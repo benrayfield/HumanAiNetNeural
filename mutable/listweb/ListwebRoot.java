@@ -111,6 +111,9 @@ public class ListwebRoot{
 	public static final SortedSet<String> namesCache = Collections.synchronizedNavigableSet(new TreeSet());
 	//public static final SortedSet<String> namesCache = new TreeSet();
 	
+	/** backup prog limits filename (not path) to 220, so includes extensions
+	such as ".jsonperline" (todo change that to .jsonl?).
+	*/
 	public static final int maxEscapedNameLen = 200; //TODO chars or bytes? Check at least Windows and Linux limits.
 	
 	/** Map of name to (last time saved to vervar). The var "last version" files are overwritten more often. *
@@ -207,7 +210,8 @@ public class ListwebRoot{
 		}
 	}
 	
-	public static final File rootDir = new File(mutable.util.Files.dataDir,"listweb");
+	public static final File rootDir = new File(mutable.util.Files.dataDir,"mm");
+	//public static final File rootDir = new File(mutable.util.Files.dataDir,"listweb");
 	//public static final File rootDir = new File("c:\\temp\\acyc"); //FIXME
 	
 	/** files named by Util.escapeName(anyShortString) *
@@ -629,6 +633,7 @@ public class ListwebRoot{
 	
 	/** Gets the "todoTime" field of a name else 0 if it doesnt have one */
 	public static double getTodoTime(String name){
+		if(Debug.logGetTodoTime) lg("getTodoTime "+name);
 		if(!ListwebUtil.isValidName(name)) return 0; //FIXME remove all my invalid names instead of letting this kind of logic spread
 		Double todoTime = (Double) get(name).get("todoTime");
 		return todoTime==null ? 0 : todoTime;
